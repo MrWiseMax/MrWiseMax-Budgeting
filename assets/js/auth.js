@@ -9,12 +9,12 @@ const Auth = (() => {
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/dashboard.html'
+        redirectTo: `${window.location.origin}/dashboard.html`
       }
     });
+  
     if (error) {
-      console.error('Google sign-in error:', error.message);
-      if (typeof UI !== 'undefined') UI.toast('Sign-in failed. Please try again.', 'error');
+      console.error(error.message);
     }
   }
 
