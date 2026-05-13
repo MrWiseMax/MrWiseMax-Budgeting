@@ -29,7 +29,6 @@ body {
   min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
   padding: 24px;
-  background: radial-gradient(ellipse 80% 60% at 50% 10%, rgba(187,136,95,0.12) 0%, transparent 65%);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -95,7 +94,6 @@ body {
   padding: 2px 8px; border-radius: 100px; text-transform: none; letter-spacing: 0;
 }
 .label-badge.required { background: rgba(187,136,95,0.15); color: var(--primary); }
-.label-badge.optional { background: rgba(255,255,255,0.05); color: var(--text-dim); }
 
 .input {
   width: 100%; background: var(--bg-card2); border: 1.5px solid var(--border);
@@ -121,11 +119,6 @@ body {
   font-size: 0.85rem; display: flex; align-items: center; gap: 4px;
 }
 
-/* ── Field Hint ──────────────────────────────────────────── */
-.field-hint { font-size: 0.74rem; color: var(--text-dim); margin-top: 5px; line-height: 1.5; }
-.field-hint.error   { color: var(--danger); }
-.field-hint.success { color: var(--success); }
-.field-hint.warning { color: var(--warning); }
 
 /* ── Char Counter ────────────────────────────────────────── */
 .char-counter {
