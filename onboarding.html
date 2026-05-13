@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to MrWiseMax — Set Up Your Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/onboarding.css" />
+</head>
+<body>
+
+<div class="onboarding-card">
+
+  <!-- Logo -->
+  <div class="ob-logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="8" fill="#BB885F"/>
+      <path d="M7 20L11 8l3 8 3-8 4 12" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="logo-text">MrWiseMax</span>
+  </div>
+
+  <!-- Header -->
+  <div class="ob-header">
+    <div class="ob-badge">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="5"/></svg>
+      One-time setup
+    </div>
+    <h1>Welcome! Let's set up your profile</h1>
+    <p>Create a username and you're good to go!</p>
+  </div>
+
+  <!-- Google Avatar Hint (shown if Google avatar detected) -->
+  <div class="google-avatar-hint" id="googleAvatarHint" style="display:none;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="7" stroke="#81C784" stroke-width="1.5"/>
+      <path d="M5.5 8l2 2 3-3" stroke="#81C784" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    Your Google profile photo has been imported automatically.
+  </div>
+
+  <!-- Avatar Upload -->
+  <div class="avatar-upload-area" id="avatarUploadArea" role="button" tabindex="0" aria-label="Upload profile picture">
+    <div class="avatar-preview" id="avatarPreview">
+      <span id="avatarInitials">?</span>
+    </div>
+    <div class="avatar-upload-info">
+      <h4>Profile Picture</h4>
+      <p>JPG, PNG, WebP or GIF · Max 5 MB</p>
+      <span class="upload-hint" id="uploadHintText">Click to upload a photo</span>
+    </div>
+    <input type="file" id="avatarFileInput" accept="image/jpeg,image/png,image/webp,image/gif"
+           style="display:none;" aria-hidden="true" />
+  </div>
+
+  <!-- Username Field -->
+  <div class="form-group">
+    <label class="label" for="usernameInput">
+      Username
+      <span class="label-badge required">Required</span>
+    </label>
+    <div class="username-wrapper">
+      <span class="username-prefix">@</span>
+      <input
+        type="text"
+        id="usernameInput"
+        class="input"
+        placeholder="your-username"
+        maxlength="30"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+      <span class="username-status" id="usernameStatus" aria-live="polite"></span>
+    </div>
+    <ul class="rules-list" id="rulesList">
+      <li id="rule-length">3–30 characters</li>
+      <li id="rule-chars">Only letters, numbers, and hyphens (-)</li>
+      <li id="rule-start">Cannot start or end with a hyphen</li>
+      <li id="rule-consecutive">No consecutive hyphens (--)</li>
+      <li id="rule-unique">Username is available</li>
+    </ul>
+  </div>
+
+  <!-- Nickname Field -->
+  <div class="ob-divider">optional extras</div>
+
+  <div class="form-group">
+    <label class="label" for="nicknameInput">
+      Display Name <em style="font-style:normal;font-weight:400;font-size:0.72rem;">(shown on your posts)</em>
+      <span class="label-badge optional">Optional</span>
+    </label>
+    <input
+      type="text"
+      id="nicknameInput"
+      class="input"
+      placeholder="e.g. Alex or Alex Johnson"
+      maxlength="50"
+    />
+    <div class="char-counter" id="nicknameCounter">0 / 50</div>
+    <div class="field-hint">Capitals and spaces are fine. Doesn't need to be unique.</div>
+  </div>
+
+  <!-- Submit -->
+  <button class="btn-submit" id="submitBtn" disabled>
+    <span id="submitBtnText">Enter username to continue</span>
+  </button>
+
+  <!-- Footer -->
+  <div class="ob-footer">
+    You can change your display name and photo anytime in <strong>Settings → Profile</strong>.<br>
+    Your username can also be changed later (once per 30 days).
+  </div>
+
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/supabase.js"></script>
+<script src="assets/js/onboarding.js"></script>
+</body>
+</html>
