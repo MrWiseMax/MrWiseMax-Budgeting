@@ -74,7 +74,7 @@
       const suggested  = emailLocal.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/--+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
       if (suggested.length >= 3) {
         usernameInput.value = suggested;
-        validateUsername(suggested); // trigger initial check
+        onUsernameInput(); // trigger initial validation
       }
     }
 
