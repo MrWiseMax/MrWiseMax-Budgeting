@@ -34,6 +34,24 @@
     unique:      document.getElementById('rule-unique'),
   };
 
+  // ── Switch Google account ─────────────────────────────────
+  async function switchGoogleAccount() {
+    const btn = document.getElementById('obSwitchBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing out…'; }
+
+    await window.db.auth.signOut();
+
+    // Re-trigger Google OAuth and force the account chooser to appear
+    await window.db.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/onboarding.html',
+        queryParams: { prompt: 'select_account' },  // forces Google account picker
+      },
+    });
+  }
+  window.switchGoogleAccount = switchGoogleAccount;  // expose to inline onclick
+
   // ── Init ──────────────────────────────────────────────────
   async function init() {
     const { data: { session } } = await window.db.auth.getSession();
@@ -42,6 +60,10 @@
       return;
     }
     currentUser = session.user;
+
+    // Show signed-in email in the account bar
+    const emailEl = document.getElementById('obAccountEmail');
+    if (emailEl) emailEl.textContent = currentUser.email || '';
 
     // If already onboarded, skip straight to dashboard
     const { data: profile } = await window.db
