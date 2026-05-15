@@ -137,7 +137,7 @@ img {
 .nav-container {
   max-width: 1160px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -146,7 +146,6 @@ img {
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
   font-size: 1.3rem;
   font-weight: 800;
 }
@@ -165,6 +164,11 @@ img {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.nav-actions a {
+  font-size: 1rem;
+  padding: 10px 15px;
 }
 
 /* ── Hero ────────────────────────────────────────────────── */
