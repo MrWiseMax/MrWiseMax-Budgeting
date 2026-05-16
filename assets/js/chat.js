@@ -508,17 +508,25 @@ const Chat = (() => {
     const convId      = m.conversation_id;
     const isMyMessage = m.sender_id === App.user.id;
 
+    console.group(`%c[Chat] Incoming message — conv ${convId}`, 'color:#BB885F;font-weight:700');
+    console.log('Message payload :', m);
+    console.log('Is my own message:', isMyMessage);
+
     // Update last-message preview in state
     const cv = conversations.find(c => c.id === convId);
     if (cv) cv.lastMessage = m;
 
     const section       = document.getElementById('section-messages');
     const isChatVisible = section?.classList.contains('active') ?? false;
+    console.log('Messages section visible:', isChatVisible);
+    console.log('Active conversation ID  :', activeConvId);
+    console.log('This message conv ID    :', convId);
 
     if (!isMyMessage) {
       // Auto-add sender as primary contact if they're not in our contacts yet
       // (covers the case where someone messages you for the first time)
       if (!contacts.find(c => c.contact_id === m.sender_id)) {
+        console.log('Sender not in contacts yet — auto-adding as Primary');
         contacts.push({ user_id: App.user.id, contact_id: m.sender_id, category: 'primary', profile: null });
         db.from('contacts')
           .upsert([{ user_id: App.user.id, contact_id: m.sender_id, category: 'primary' }], { onConflict: 'user_id,contact_id' })
@@ -528,41 +536,75 @@ const Chat = (() => {
       // Append incoming message to the open chat window in real-time.
       // appendMsgToDOM deduplicates, so the polling fallback won't show it again.
       if (convId === activeConvId && isChatVisible) {
+        console.log('Appending message to open chat window');
         const list = document.getElementById('chat-messages-list');
         if (list && appendMsgToDOM(m, list)) {
           scrollToBottom();
         }
+      } else {
+        console.log('Message not appended to DOM —',
+          convId !== activeConvId ? 'different conversation is open' : 'messages section is not visible');
       }
 
       // Badge: show when sender is a PRIMARY contact AND the user is NOT
       // actively viewing that specific conversation
-      const contact = contacts.find(c => c.contact_id === m.sender_id);
-      const isPrimary = !contact || contact.category === 'primary';
+      const contact           = contacts.find(c => c.contact_id === m.sender_id);
+      const isPrimary         = !contact || contact.category === 'primary';
       const isViewingThisConv = isChatVisible && convId === activeConvId;
+
+      console.log('Sender contact entry  :', contact ?? '(none — treated as Primary)');
+      console.log('Sender is Primary     :', isPrimary);
+      console.log('User viewing this conv:', isViewingThisConv);
+
       if (isPrimary && !isViewingThisConv) {
         unreadPrimaryConvIds.add(convId);
+        console.log('%c→ Badge will show. Unread primary convs:', 'color:#4CAF50;font-weight:700',
+          [...unreadPrimaryConvIds]);
         updateBadge();
+      } else if (!isPrimary) {
+        console.log('%c→ Badge NOT shown — sender is in General list', 'color:#FF9800;font-weight:700');
+      } else {
+        console.log('%c→ Badge NOT shown — user is actively viewing this conversation', 'color:#2196F3;font-weight:700');
       }
+    } else {
+      console.log('Own message — skipping badge logic');
     }
+
+    console.groupEnd();
 
     // Refresh contact-list preview while on the messages page
     if (isChatVisible) renderContactList();
   }
 
   function markRead(convId) {
-    if (unreadPrimaryConvIds.delete(convId)) updateBadge();
+    if (unreadPrimaryConvIds.delete(convId)) {
+      console.log(`[Chat] Marked conv ${convId} as read. Remaining unread primary convs:`, [...unreadPrimaryConvIds]);
+      updateBadge();
+    }
   }
 
   function updateBadge() {
-    const btn = document.querySelector('.topbar-messages-btn');
-    if (!btn) return;
-    btn.querySelector('.msg-badge')?.remove();
+    const btn   = document.querySelector('.topbar-messages-btn');
     const count = unreadPrimaryConvIds.size;
+
+    console.log(`[Chat] updateBadge — unread primary conversations: ${count}`,
+      count > 0 ? [...unreadPrimaryConvIds] : '(none)');
+
+    if (!btn) {
+      console.warn('[Chat] updateBadge — .topbar-messages-btn not found in DOM');
+      return;
+    }
+
+    btn.querySelector('.msg-badge')?.remove();
+
     if (count > 0) {
       const badge = document.createElement('span');
       badge.className   = 'msg-badge';
       badge.textContent = count > 99 ? '99+' : String(count);
       btn.appendChild(badge);
+      console.log(`%c[Chat] Badge shown: ${badge.textContent}`, 'color:#F44336;font-weight:700');
+    } else {
+      console.log('[Chat] Badge removed (no unread primary conversations)');
     }
   }
 
