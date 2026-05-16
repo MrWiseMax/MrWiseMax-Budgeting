@@ -1749,6 +1749,7 @@ select.input {
 
 /* ── Topbar Messages Button ──────────────────────────────── */
 .topbar-messages-btn {
+  position: relative;
   width: 35px;
   height: 35px;
   border-radius: 50%;
@@ -2582,6 +2583,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: block;
   font-size: 0.72rem;
   color: var(--text-muted);
+}
+
+/* Right side of chat header (live dot + category select) */
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Green pulsing dot — indicates the WebSocket poll is active */
+.chat-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4CAF50;
+  flex-shrink: 0;
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.45; transform: scale(0.8); }
 }
 
 .chat-category-select {

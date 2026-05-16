@@ -21,8 +21,18 @@ const Chat = (() => {
   // conversation so every subscription uses `conversation_id=eq.<id>`.
   const convChannels = new Map();
 
+  // Single channel that watches for new conversations the current user is part of
+  let convListChannel = null;
+
   // Conversations with unread messages from PRIMARY contacts
   const unreadPrimaryConvIds = new Set();
+
+  // ── Real-time deduplication & polling ─────────────────────
+  // shownMsgIds prevents the same message appearing twice whether it arrives
+  // via WebSocket (Supabase Realtime) or the 3-second polling fallback.
+  const shownMsgIds = new Set();
+  let lastMsgTs     = null;   // created_at of newest shown message (for efficient poll queries)
+  let pollInterval  = null;
 
   // ── Public API ────────────────────────────────────────────
 
@@ -31,6 +41,7 @@ const Chat = (() => {
     try {
       await Promise.all([loadContacts(), loadConversations()]);
       syncConvSubscriptions();
+      subscribeToNewConversations();
     } catch (_) { /* non-critical on startup */ }
   }
 
@@ -42,6 +53,7 @@ const Chat = (() => {
     wireSearchInput();
     syncConvSubscriptions();
     startTimeUpdater();
+    startMessagePoll();
   }
 
   // Called from community / user search → "Message" button
@@ -191,6 +203,14 @@ const Chat = (() => {
     const contact  = contacts.find(c => c.contact_id === activeOtherUser.id);
     const category = contact?.category ?? 'primary';
 
+    // Seed deduplication state from the initial message load
+    shownMsgIds.clear();
+    lastMsgTs = null;
+    messages.forEach(m => {
+      shownMsgIds.add(m.id);
+      if (!lastMsgTs || m.created_at > lastMsgTs) lastMsgTs = m.created_at;
+    });
+
     win.innerHTML = `
       <div class="chat-header">
         <div class="chat-header-user" onclick="Chat.openConversationById('${activeOtherUser.id}')">
@@ -200,12 +220,15 @@ const Chat = (() => {
             <span class="chat-header-handle">@${activeOtherUser.username}</span>
           </div>
         </div>
-        <select class="chat-category-select"
-                onchange="Chat.setCategory('${activeOtherUser.id}', this.value)"
-                title="List category">
-          <option value="primary" ${category === 'primary' ? 'selected' : ''}>Primary</option>
-          <option value="general" ${category === 'general' ? 'selected' : ''}>General</option>
-        </select>
+        <div class="chat-header-right">
+          <span class="chat-live-dot" title="Live"></span>
+          <select class="chat-category-select"
+                  onchange="Chat.setCategory('${activeOtherUser.id}', this.value)"
+                  title="List category">
+            <option value="primary" ${category === 'primary' ? 'selected' : ''}>Primary</option>
+            <option value="general" ${category === 'general' ? 'selected' : ''}>General</option>
+          </select>
+        </div>
       </div>
       <div class="chat-messages" id="chat-messages-list">
         ${messages.length
@@ -301,13 +324,9 @@ const Chat = (() => {
       return;
     }
 
-    // Append own message to UI immediately (optimistic)
+    // Show own message immediately using the dedup helper
     const list = document.getElementById('chat-messages-list');
-    if (list) {
-      list.querySelector('.chat-no-messages')?.remove();
-      const el = document.createElement('div');
-      el.innerHTML = msgBubble(msg, App.user.id);
-      list.appendChild(el.firstElementChild);
+    if (list && appendMsgToDOM(msg, list)) {
       scrollToBottom();
     }
 
@@ -326,6 +345,78 @@ const Chat = (() => {
     else await loadContacts();
     renderContactList();
     UI.toast(`Moved to ${category === 'primary' ? 'Primary' : 'General'}.`, 'success');
+  }
+
+  // ── Deduplication helper ──────────────────────────────────
+  // Returns true if the message was new and appended to the DOM.
+
+  function appendMsgToDOM(m, listEl) {
+    if (shownMsgIds.has(m.id)) return false;
+    shownMsgIds.add(m.id);
+    if (!lastMsgTs || m.created_at > lastMsgTs) lastMsgTs = m.created_at;
+    listEl.querySelector('.chat-no-messages')?.remove();
+    const el = document.createElement('div');
+    el.innerHTML = msgBubble(m, App.user.id);
+    listEl.appendChild(el.firstElementChild);
+    return true;
+  }
+
+  // ── Polling Fallback ──────────────────────────────────────
+  // Runs every 3 s while the messages section is open to catch any messages
+  // that the WebSocket subscription may have missed (e.g. if the Supabase
+  // Realtime publication isn't yet enabled on the messages table, or the
+  // channel experienced a transient error). appendMsgToDOM deduplicates so
+  // messages that already arrived via WebSocket are never shown twice.
+
+  function startMessagePoll() {
+    if (pollInterval) return;
+    pollInterval = setInterval(_pollMessages, 3000);
+  }
+
+  function stopMessagePoll() {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+
+  async function _pollMessages() {
+    if (!activeConvId) return;
+    const section = document.getElementById('section-messages');
+    if (!section?.classList.contains('active')) return;
+    const list = document.getElementById('chat-messages-list');
+    if (!list) return;
+
+    // Only fetch messages newer than the last one we've shown
+    let q = db.from('messages')
+      .select('*')
+      .eq('conversation_id', activeConvId)
+      .order('created_at', { ascending: true });
+    if (lastMsgTs) q = q.gt('created_at', lastMsgTs);
+    const { data } = await q.limit(50);
+    if (!data?.length) return;
+
+    let hasNew = false;
+    data.forEach(m => {
+      if (appendMsgToDOM(m, list)) {
+        hasNew = true;
+        // Update last-message preview in state
+        const cv = conversations.find(c => c.id === m.conversation_id);
+        if (cv) cv.lastMessage = m;
+        // Badge logic for incoming messages from others
+        if (m.sender_id !== App.user.id) {
+          const contact   = contacts.find(c => c.contact_id === m.sender_id);
+          const isPrimary = !contact || contact.category === 'primary';
+          if (isPrimary) {
+            unreadPrimaryConvIds.delete(m.conversation_id); // already viewing
+            updateBadge();
+          }
+        }
+      }
+    });
+
+    if (hasNew) {
+      scrollToBottom();
+      renderContactList();
+    }
   }
 
   // ── Realtime WebSocket Subscriptions ──────────────────────
@@ -350,21 +441,66 @@ const Chat = (() => {
     // Open a channel for each conversation we don't have one for yet
     for (const conv of conversations) {
       if (convChannels.has(conv.id)) continue;
-      const ch = db
-        .channel(`conv-msg-${conv.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `conversation_id=eq.${conv.id}`,
-          },
-          handleIncomingMessage
-        )
-        .subscribe();
-      convChannels.set(conv.id, ch);
+      _subscribeToConv(conv);
     }
+  }
+
+  function _subscribeToConv(conv) {
+    const ch = db
+      .channel(`conv-msg-${conv.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conv.id}`,
+        },
+        handleIncomingMessage
+      )
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn(`[Chat] Channel ${status} for conv ${conv.id} — retrying in 4 s`, err);
+          // Remove the broken channel and schedule a re-subscribe
+          if (convChannels.get(conv.id) === ch) {
+            convChannels.delete(conv.id);
+            db.removeChannel(ch);
+          }
+          setTimeout(() => {
+            if (!convChannels.has(conv.id) && conversations.find(c => c.id === conv.id)) {
+              _subscribeToConv(conv);
+            }
+          }, 4000);
+        }
+      });
+    convChannels.set(conv.id, ch);
+  }
+
+  // Watches the conversations table so that when the OTHER person creates a
+  // new conversation with us, we immediately open a message subscription for it.
+  function subscribeToNewConversations() {
+    if (convListChannel) return;
+    const uid = App.user.id;
+    convListChannel = db
+      .channel('chat-new-convs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `user1_id=eq.${uid}` }, handleNewConversation)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `user2_id=eq.${uid}` }, handleNewConversation)
+      .subscribe((status, err) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Chat] Conversations channel error — retrying in 4 s', err);
+          convListChannel = null;
+          setTimeout(subscribeToNewConversations, 4000);
+        }
+      });
+  }
+
+  async function handleNewConversation(payload) {
+    const newConv = payload.new;
+    if (conversations.find(c => c.id === newConv.id)) return;
+    await loadConversations();
+    syncConvSubscriptions();
+    const section = document.getElementById('section-messages');
+    if (section?.classList.contains('active')) renderContactList();
   }
 
   function handleIncomingMessage(payload) {
@@ -379,31 +515,38 @@ const Chat = (() => {
     const section       = document.getElementById('section-messages');
     const isChatVisible = section?.classList.contains('active') ?? false;
 
-    // Append incoming message to the open chat window (not our own — those are
-    // already appended optimistically in send())
-    if (!isMyMessage && convId === activeConvId && isChatVisible) {
-      const list = document.getElementById('chat-messages-list');
-      if (list) {
-        list.querySelector('.chat-no-messages')?.remove();
-        const el = document.createElement('div');
-        el.innerHTML = msgBubble(m, App.user.id);
-        list.appendChild(el.firstElementChild);
-        scrollToBottom();
+    if (!isMyMessage) {
+      // Auto-add sender as primary contact if they're not in our contacts yet
+      // (covers the case where someone messages you for the first time)
+      if (!contacts.find(c => c.contact_id === m.sender_id)) {
+        contacts.push({ user_id: App.user.id, contact_id: m.sender_id, category: 'primary', profile: null });
+        db.from('contacts')
+          .upsert([{ user_id: App.user.id, contact_id: m.sender_id, category: 'primary' }], { onConflict: 'user_id,contact_id' })
+          .then(() => loadContacts());
+      }
+
+      // Append incoming message to the open chat window in real-time.
+      // appendMsgToDOM deduplicates, so the polling fallback won't show it again.
+      if (convId === activeConvId && isChatVisible) {
+        const list = document.getElementById('chat-messages-list');
+        if (list && appendMsgToDOM(m, list)) {
+          scrollToBottom();
+        }
+      }
+
+      // Badge: show when sender is a PRIMARY contact AND the user is NOT
+      // actively viewing that specific conversation
+      const contact = contacts.find(c => c.contact_id === m.sender_id);
+      const isPrimary = !contact || contact.category === 'primary';
+      const isViewingThisConv = isChatVisible && convId === activeConvId;
+      if (isPrimary && !isViewingThisConv) {
+        unreadPrimaryConvIds.add(convId);
+        updateBadge();
       }
     }
 
     // Refresh contact-list preview while on the messages page
     if (isChatVisible) renderContactList();
-
-    // Badge: increment only when the messages page is NOT visible AND
-    // the sender is in our PRIMARY contacts list
-    if (!isMyMessage && !isChatVisible) {
-      const contact = contacts.find(c => c.contact_id === m.sender_id);
-      if (contact?.category === 'primary') {
-        unreadPrimaryConvIds.add(convId);
-        updateBadge();
-      }
-    }
   }
 
   function markRead(convId) {
@@ -462,5 +605,6 @@ const Chat = (() => {
     openConversationById, openConversation,
     send, setCategory, setFilter, ensureContact,
     startTimeUpdater, stopTimeUpdater,
+    startMessagePoll, stopMessagePoll,
   };
 })();
