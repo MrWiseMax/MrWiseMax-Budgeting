@@ -127,8 +127,8 @@ body {
 }
 
 .user-avatar {
-  width: 34px;
-  height: 34px;
+  width: 39px;
+  height: 39px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   display: flex;
@@ -1748,7 +1748,7 @@ select.input {
 }
 
 /* ── Topbar Messages Button ──────────────────────────────── */
-.topbar-messages-btn {
+.topbar-messages-btn { 
   width: 30px;
   height: 30px;
   background: none;
@@ -1764,8 +1764,8 @@ select.input {
 }
 
 .topbar-messages-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .topbar-messages-btn:hover {
@@ -2034,7 +2034,13 @@ select.input {
 
   .dash-content {
     padding: 14px;
-    padding-bottom: calc(var(--mobile-h) + 20px);
+  }
+
+  .dash-content::after {
+    content: '';
+    display: block;
+    height: calc(var(--mobile-h) + 20px);
+    flex-shrink: 0;
   }
 
   .topbar {
