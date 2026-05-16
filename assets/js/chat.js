@@ -16,36 +16,139 @@ const Chat = (() => {
   let timeUpdateInterval = null;
 
   // One WebSocket channel per conversation (conv_id → channel)
-  // NOTE: Supabase Realtime postgres_changes only supports `eq` as a filter
-  // operator — `in` is not valid. We therefore create one channel per
-  // conversation so every subscription uses `conversation_id=eq.<id>`.
   const convChannels = new Map();
-
-  // Single channel that watches for new conversations the current user is part of
   let convListChannel = null;
 
   // Conversations with unread messages from PRIMARY contacts
   const unreadPrimaryConvIds = new Set();
 
-  // ── Real-time deduplication & polling ─────────────────────
-  // shownMsgIds prevents the same message appearing twice whether it arrives
-  // via WebSocket (Supabase Realtime) or the 3-second polling fallback.
+  // ── Real-time deduplication & message polling ──────────────
   const shownMsgIds = new Set();
-  let lastMsgTs     = null;   // created_at of newest shown message (for efficient poll queries)
-  let pollInterval  = null;
+  let lastMsgTs     = null;
+  let pollInterval  = null;   // foreground message poll (runs while messages section is open)
+
+  // ── Background badge poll ──────────────────────────────────
+  // Runs every 15 s regardless of active section.
+  // This is the primary unread-badge source — it reloads conversation
+  // last-messages from the DB and compares them against the per-conversation
+  // last-read timestamps stored in localStorage. WebSocket events are a
+  // faster secondary update on top of this.
+  let badgePollInterval = null;
+  const LAST_READ_KEY   = 'mrwisemax_chat_last_read';
+
+  function _getLastReadTimes() {
+    try { return JSON.parse(localStorage.getItem(LAST_READ_KEY) || '{}'); }
+    catch (_) { return {}; }
+  }
+
+  function _setLastReadTime(convId) {
+    try {
+      const t = _getLastReadTimes();
+      t[convId] = new Date().toISOString();
+      localStorage.setItem(LAST_READ_KEY, JSON.stringify(t));
+      console.log(`[Chat:Badge] Saved last-read for conv ${convId}:`, t[convId]);
+    } catch (_) {}
+  }
+
+  // Recomputes unreadPrimaryConvIds from current conversations + localStorage.
+  // Called on page load and after every badge poll refresh.
+  function _computeBadge() {
+    const uid          = App.user.id;
+    const lastReadTimes = _getLastReadTimes();
+
+    console.group('%c[Chat:Badge] Computing badge from DB state', 'color:#BB885F;font-weight:700');
+    console.log('Conversations loaded :', conversations.length);
+    console.log('Last-read times (localStorage):', lastReadTimes);
+
+    unreadPrimaryConvIds.clear();
+
+    conversations.forEach(conv => {
+      // Skip the conversation the user currently has open — they are reading it
+      if (conv.id === activeConvId) {
+        console.log(`  Conv ${conv.id} — skipped (currently open)`);
+        return;
+      }
+
+      if (!conv.lastMessage) {
+        console.log(`  Conv ${conv.id} — skipped (no messages)`);
+        return;
+      }
+
+      // Skip if the last message was sent by the current user
+      if (conv.lastMessage.sender_id === uid) {
+        console.log(`  Conv ${conv.id} — skipped (last msg is mine)`);
+        return;
+      }
+
+      // Determine whether the other person is a Primary contact
+      const otherId = conv.user1_id === uid ? conv.user2_id : conv.user1_id;
+      const contact = contacts.find(c => c.contact_id === otherId);
+      const isPrimary = !contact || contact.category === 'primary';
+
+      if (!isPrimary) {
+        console.log(`  Conv ${conv.id} — skipped (General contact)`);
+        return;
+      }
+
+      const lastRead   = lastReadTimes[conv.id] ?? null;
+      const lastMsgAt  = conv.lastMessage.created_at;
+      const isUnread   = !lastRead || lastMsgAt > lastRead;
+
+      console.log(
+        `  Conv ${conv.id} — lastMsg: ${lastMsgAt} | lastRead: ${lastRead ?? 'never'} → ${isUnread ? '%cUNREAD' : '%cREAD'}`,
+        isUnread ? 'color:#F44336;font-weight:700' : 'color:#4CAF50'
+      );
+
+      if (isUnread) unreadPrimaryConvIds.add(conv.id);
+    });
+
+    console.log('Unread primary conv count:', unreadPrimaryConvIds.size, [...unreadPrimaryConvIds]);
+    console.groupEnd();
+
+    updateBadge();
+  }
+
+  // Reloads conversations from DB then recomputes the badge.
+  // Called on init and every 15 s by the badge poll.
+  async function _refreshBadge() {
+    console.log('[Chat:Badge] Refreshing badge (DB reload)...');
+    try {
+      await Promise.all([loadContacts(), loadConversations()]);
+      _computeBadge();
+    } catch (e) {
+      console.error('[Chat:Badge] Refresh failed:', e);
+    }
+  }
+
+  function startBadgePoll() {
+    if (badgePollInterval) return;
+    console.log('[Chat:Badge] Background badge poll started (every 15 s)');
+    badgePollInterval = setInterval(_refreshBadge, 15_000);
+  }
+
+  function stopBadgePoll() {
+    if (!badgePollInterval) return;
+    clearInterval(badgePollInterval);
+    badgePollInterval = null;
+    console.log('[Chat:Badge] Background badge poll stopped');
+  }
 
   // ── Public API ────────────────────────────────────────────
 
-  // Called once at dashboard startup — starts background badge tracking
   async function initGlobal() {
+    console.log('[Chat] initGlobal — loading contacts & conversations...');
     try {
       await Promise.all([loadContacts(), loadConversations()]);
-      syncConvSubscriptions();
+      console.log('[Chat] initGlobal — data loaded. Contacts:', contacts.length, '| Conversations:', conversations.length);
+      _computeBadge();          // Seed badge immediately from DB state
+      syncConvSubscriptions();  // Open one WebSocket channel per conversation
       subscribeToNewConversations();
-    } catch (_) { /* non-critical on startup */ }
+      startBadgePoll();         // Keep badge accurate every 15 s (WebSocket fallback)
+    } catch (e) {
+      console.error('[Chat] initGlobal failed:', e);
+    }
   }
 
-  // Called when the user opens the messages section
   async function init() {
     await Promise.all([loadContacts(), loadConversations()]);
     renderContactList();
@@ -56,7 +159,6 @@ const Chat = (() => {
     startMessagePoll();
   }
 
-  // Called from community / user search → "Message" button
   async function startChat(userId, displayName, username) {
     await ensureContact(userId);
     navigateTo('messages');
@@ -203,7 +305,6 @@ const Chat = (() => {
     const contact  = contacts.find(c => c.contact_id === activeOtherUser.id);
     const category = contact?.category ?? 'primary';
 
-    // Seed deduplication state from the initial message load
     shownMsgIds.clear();
     lastMsgTs = null;
     messages.forEach(m => {
@@ -287,7 +388,6 @@ const Chat = (() => {
     activeConvId = convId;
     markRead(convId);
 
-    // If this is a new conversation, refresh list and add its subscription
     if (!conversations.find(c => c.id === convId)) {
       await loadConversations();
       syncConvSubscriptions();
@@ -299,7 +399,6 @@ const Chat = (() => {
 
   async function ensureContact(userId) {
     if (contacts.find(c => c.contact_id === userId)) return;
-    // Default to 'primary' so new chats show badge notifications immediately
     await db.from('contacts').upsert(
       [{ user_id: App.user.id, contact_id: userId, category: 'primary' }],
       { onConflict: 'user_id,contact_id' }
@@ -324,14 +423,14 @@ const Chat = (() => {
       return;
     }
 
-    // Show own message immediately using the dedup helper
     const list = document.getElementById('chat-messages-list');
-    if (list && appendMsgToDOM(msg, list)) {
-      scrollToBottom();
-    }
+    if (list && appendMsgToDOM(msg, list)) scrollToBottom();
 
+    // Update last-message preview in state + mark the conversation as read
+    // (we just sent something, so we've clearly seen all prior messages)
     const cv = conversations.find(c => c.id === activeConvId);
     if (cv) cv.lastMessage = msg;
+    _setLastReadTime(activeConvId);
     renderContactList();
   }
 
@@ -348,7 +447,6 @@ const Chat = (() => {
   }
 
   // ── Deduplication helper ──────────────────────────────────
-  // Returns true if the message was new and appended to the DOM.
 
   function appendMsgToDOM(m, listEl) {
     if (shownMsgIds.has(m.id)) return false;
@@ -361,12 +459,8 @@ const Chat = (() => {
     return true;
   }
 
-  // ── Polling Fallback ──────────────────────────────────────
-  // Runs every 3 s while the messages section is open to catch any messages
-  // that the WebSocket subscription may have missed (e.g. if the Supabase
-  // Realtime publication isn't yet enabled on the messages table, or the
-  // channel experienced a transient error). appendMsgToDOM deduplicates so
-  // messages that already arrived via WebSocket are never shown twice.
+  // ── Foreground message poll ───────────────────────────────
+  // Runs every 3 s while the messages section is open.
 
   function startMessagePoll() {
     if (pollInterval) return;
@@ -385,11 +479,7 @@ const Chat = (() => {
     const list = document.getElementById('chat-messages-list');
     if (!list) return;
 
-    // Only fetch messages newer than the last one we've shown
-    let q = db.from('messages')
-      .select('*')
-      .eq('conversation_id', activeConvId)
-      .order('created_at', { ascending: true });
+    let q = db.from('messages').select('*').eq('conversation_id', activeConvId).order('created_at', { ascending: true });
     if (lastMsgTs) q = q.gt('created_at', lastMsgTs);
     const { data } = await q.limit(50);
     if (!data?.length) return;
@@ -398,39 +488,24 @@ const Chat = (() => {
     data.forEach(m => {
       if (appendMsgToDOM(m, list)) {
         hasNew = true;
-        // Update last-message preview in state
         const cv = conversations.find(c => c.id === m.conversation_id);
         if (cv) cv.lastMessage = m;
-        // Badge logic for incoming messages from others
-        if (m.sender_id !== App.user.id) {
-          const contact   = contacts.find(c => c.contact_id === m.sender_id);
-          const isPrimary = !contact || contact.category === 'primary';
-          if (isPrimary) {
-            unreadPrimaryConvIds.delete(m.conversation_id); // already viewing
-            updateBadge();
-          }
-        }
       }
     });
 
     if (hasNew) {
       scrollToBottom();
       renderContactList();
+      // Keep last-read in sync so the badge stays clear while viewing
+      _setLastReadTime(activeConvId);
     }
   }
 
   // ── Realtime WebSocket Subscriptions ──────────────────────
-  //
-  // Supabase Realtime postgres_changes supports ONLY `eq` as a row filter
-  // operator. The `in` operator does not work. We therefore open one channel
-  // per conversation — each using `conversation_id=eq.<id>` — and keep them
-  // in `convChannels` so we never create duplicates and can tear them down
-  // cleanly when conversations are removed.
 
   function syncConvSubscriptions() {
     const currentIds = new Set(conversations.map(c => c.id));
 
-    // Remove channels for conversations no longer in our list
     for (const [id, ch] of convChannels) {
       if (!currentIds.has(id)) {
         db.removeChannel(ch);
@@ -438,30 +513,28 @@ const Chat = (() => {
       }
     }
 
-    // Open a channel for each conversation we don't have one for yet
     for (const conv of conversations) {
       if (convChannels.has(conv.id)) continue;
       _subscribeToConv(conv);
     }
+
+    console.log(`[Chat:WS] Active channels: ${convChannels.size} (conversations: ${conversations.length})`);
   }
 
   function _subscribeToConv(conv) {
+    console.log(`[Chat:WS] Opening channel for conv ${conv.id}...`);
     const ch = db
       .channel(`conv-msg-${conv.id}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conv.id}`,
-        },
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${conv.id}` },
         handleIncomingMessage
       )
       .subscribe((status, err) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn(`[Chat] Channel ${status} for conv ${conv.id} — retrying in 4 s`, err);
-          // Remove the broken channel and schedule a re-subscribe
+        if (status === 'SUBSCRIBED') {
+          console.log(`%c[Chat:WS] ✓ Subscribed to conv ${conv.id}`, 'color:#4CAF50;font-weight:700');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn(`[Chat:WS] ${status} on conv ${conv.id} — retrying in 4 s`, err);
           if (convChannels.get(conv.id) === ch) {
             convChannels.delete(conv.id);
             db.removeChannel(ch);
@@ -471,25 +544,30 @@ const Chat = (() => {
               _subscribeToConv(conv);
             }
           }, 4000);
+        } else {
+          console.log(`[Chat:WS] Channel status for conv ${conv.id}: ${status}`, err ?? '');
         }
       });
     convChannels.set(conv.id, ch);
   }
 
-  // Watches the conversations table so that when the OTHER person creates a
-  // new conversation with us, we immediately open a message subscription for it.
   function subscribeToNewConversations() {
     if (convListChannel) return;
     const uid = App.user.id;
+    console.log('[Chat:WS] Opening new-conversations channel...');
     convListChannel = db
       .channel('chat-new-convs')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `user1_id=eq.${uid}` }, handleNewConversation)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'conversations', filter: `user2_id=eq.${uid}` }, handleNewConversation)
       .subscribe((status, err) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.warn('[Chat] Conversations channel error — retrying in 4 s', err);
+        if (status === 'SUBSCRIBED') {
+          console.log('%c[Chat:WS] ✓ Subscribed to new-conversations channel', 'color:#4CAF50;font-weight:700');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.warn('[Chat:WS] New-conversations channel error — retrying in 4 s', err);
           convListChannel = null;
           setTimeout(subscribeToNewConversations, 4000);
+        } else {
+          console.log(`[Chat:WS] New-conversations channel status: ${status}`, err ?? '');
         }
       });
   }
@@ -497,6 +575,7 @@ const Chat = (() => {
   async function handleNewConversation(payload) {
     const newConv = payload.new;
     if (conversations.find(c => c.id === newConv.id)) return;
+    console.log('[Chat:WS] New conversation detected:', newConv.id);
     await loadConversations();
     syncConvSubscriptions();
     const section = document.getElementById('section-messages');
@@ -508,46 +587,37 @@ const Chat = (() => {
     const convId      = m.conversation_id;
     const isMyMessage = m.sender_id === App.user.id;
 
-    console.group(`%c[Chat] Incoming message — conv ${convId}`, 'color:#BB885F;font-weight:700');
-    console.log('Message payload :', m);
-    console.log('Is my own message:', isMyMessage);
+    console.group(`%c[Chat:WS] Incoming message — conv ${convId}`, 'color:#BB885F;font-weight:700');
+    console.log('Message payload       :', m);
+    console.log('Is my own message     :', isMyMessage);
 
-    // Update last-message preview in state
     const cv = conversations.find(c => c.id === convId);
     if (cv) cv.lastMessage = m;
 
     const section       = document.getElementById('section-messages');
     const isChatVisible = section?.classList.contains('active') ?? false;
-    console.log('Messages section visible:', isChatVisible);
-    console.log('Active conversation ID  :', activeConvId);
-    console.log('This message conv ID    :', convId);
+    console.log('Messages section open :', isChatVisible);
+    console.log('Active conv ID        :', activeConvId);
+    console.log('This message conv ID  :', convId);
 
     if (!isMyMessage) {
-      // Auto-add sender as primary contact if they're not in our contacts yet
-      // (covers the case where someone messages you for the first time)
       if (!contacts.find(c => c.contact_id === m.sender_id)) {
-        console.log('Sender not in contacts yet — auto-adding as Primary');
+        console.log('Sender not in contacts — auto-adding as Primary');
         contacts.push({ user_id: App.user.id, contact_id: m.sender_id, category: 'primary', profile: null });
         db.from('contacts')
           .upsert([{ user_id: App.user.id, contact_id: m.sender_id, category: 'primary' }], { onConflict: 'user_id,contact_id' })
           .then(() => loadContacts());
       }
 
-      // Append incoming message to the open chat window in real-time.
-      // appendMsgToDOM deduplicates, so the polling fallback won't show it again.
       if (convId === activeConvId && isChatVisible) {
-        console.log('Appending message to open chat window');
+        console.log('Appending to open chat window (real-time)');
         const list = document.getElementById('chat-messages-list');
-        if (list && appendMsgToDOM(m, list)) {
-          scrollToBottom();
-        }
+        if (list && appendMsgToDOM(m, list)) scrollToBottom();
       } else {
-        console.log('Message not appended to DOM —',
+        console.log('Not appending to DOM —',
           convId !== activeConvId ? 'different conversation is open' : 'messages section is not visible');
       }
 
-      // Badge: show when sender is a PRIMARY contact AND the user is NOT
-      // actively viewing that specific conversation
       const contact           = contacts.find(c => c.contact_id === m.sender_id);
       const isPrimary         = !contact || contact.category === 'primary';
       const isViewingThisConv = isChatVisible && convId === activeConvId;
@@ -567,18 +637,18 @@ const Chat = (() => {
         console.log('%c→ Badge NOT shown — user is actively viewing this conversation', 'color:#2196F3;font-weight:700');
       }
     } else {
-      console.log('Own message — skipping badge logic');
+      console.log('Own outgoing message — skipping badge logic');
     }
 
     console.groupEnd();
 
-    // Refresh contact-list preview while on the messages page
     if (isChatVisible) renderContactList();
   }
 
   function markRead(convId) {
+    _setLastReadTime(convId);
     if (unreadPrimaryConvIds.delete(convId)) {
-      console.log(`[Chat] Marked conv ${convId} as read. Remaining unread primary convs:`, [...unreadPrimaryConvIds]);
+      console.log(`[Chat:Badge] Marked conv ${convId} as read. Remaining unread:`, [...unreadPrimaryConvIds]);
       updateBadge();
     }
   }
@@ -587,11 +657,8 @@ const Chat = (() => {
     const btn   = document.querySelector('.topbar-messages-btn');
     const count = unreadPrimaryConvIds.size;
 
-    console.log(`[Chat] updateBadge — unread primary conversations: ${count}`,
-      count > 0 ? [...unreadPrimaryConvIds] : '(none)');
-
     if (!btn) {
-      console.warn('[Chat] updateBadge — .topbar-messages-btn not found in DOM');
+      console.warn('[Chat:Badge] .topbar-messages-btn not found in DOM — cannot update badge');
       return;
     }
 
@@ -602,15 +669,14 @@ const Chat = (() => {
       badge.className   = 'msg-badge';
       badge.textContent = count > 99 ? '99+' : String(count);
       btn.appendChild(badge);
-      console.log(`%c[Chat] Badge shown: ${badge.textContent}`, 'color:#F44336;font-weight:700');
+      console.log(`%c[Chat:Badge] Badge VISIBLE — showing ${badge.textContent} unread primary conversation(s)`,
+        'color:#F44336;font-weight:700');
     } else {
-      console.log('[Chat] Badge removed (no unread primary conversations)');
+      console.log('[Chat:Badge] Badge HIDDEN — no unread primary conversations');
     }
   }
 
   // ── Timestamp Updater ─────────────────────────────────────
-  // Ticks every 60 s while the messages section is open.
-  // Only updates elements already rendered in #chat-messages-list.
 
   function startTimeUpdater() {
     if (timeUpdateInterval) return;
@@ -648,5 +714,6 @@ const Chat = (() => {
     send, setCategory, setFilter, ensureContact,
     startTimeUpdater, stopTimeUpdater,
     startMessagePoll, stopMessagePoll,
+    stopBadgePoll,
   };
 })();
