@@ -2039,7 +2039,7 @@ select.input {
   .dash-content::after {
     content: '';
     display: block;
-    height: calc(var(--mobile-h) + 20px);
+    height: calc(var(--mobile-h) + 100px);
     flex-shrink: 0;
   }
 
