@@ -1748,14 +1748,14 @@ select.input {
 }
 
 /* ── Topbar Messages Button ──────────────────────────────── */
-.topbar-messages-btn {
-  position: relative;
-  width: 34px;
-  height: 34px;
+.topbar-messages-btn { 
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: none;
   border: none;
   cursor: pointer;
+  line-height: 1;
   display: none;
   align-items: center;
   justify-content: center;
@@ -1763,6 +1763,12 @@ select.input {
   transition: opacity var(--ease);
   opacity: 0.85;
   color: #fff;
+  padding: 0;
+}
+
+.topbar-messages-btn svg {
+  width: 28px;
+  height: 28px;
 }
 
 .topbar-messages-btn:hover {
