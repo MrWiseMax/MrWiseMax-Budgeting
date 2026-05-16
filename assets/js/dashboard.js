@@ -46,6 +46,7 @@ async function initDashboard() {
   navigateTo('overview');
   setupNavigation();
   setupFilterListeners();
+  setupDynamicLayout();
   subscribeToBlueprints();
   Chat.initGlobal(); // Start background badge tracking
 }
@@ -112,6 +113,52 @@ function mobileMoreNav(section) {
 document.addEventListener('click', () => {
   document.getElementById('mobile-more-popup')?.classList.remove('open');
 });
+
+// ── Dynamic Layout Sizing ─────────────────────────────────────
+// Replaces the static .dash-content::after spacer.
+// Runs on boot, resize, and orientation change so every section and the
+// chat panel fit the exact visible area on any device.
+
+function setupDynamicLayout() {
+  _applyLayout();
+  window.addEventListener('resize', _applyLayout);
+  // orientationchange fires before the viewport settles; the 150 ms delay
+  // lets the browser finish repainting before we measure.
+  window.addEventListener('orientationchange', () => setTimeout(_applyLayout, 150));
+}
+
+function _applyLayout() {
+  const mobileNav   = document.querySelector('.mobile-nav');
+  const topbar      = document.querySelector('.topbar');
+  const dashContent = document.querySelector('.dash-content');
+  if (!dashContent) return;
+
+  // Use visualViewport when available — it stays accurate when the
+  // on-screen keyboard or browser chrome resizes the visible area.
+  const vh       = window.visualViewport?.height ?? window.innerHeight;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const navH     = isMobile && mobileNav ? mobileNav.offsetHeight : 0;
+  const topbarH  = topbar ? topbar.offsetHeight : 0;
+  const availH   = Math.floor(vh - topbarH - navH);       // px available for sections
+  const padH     = isMobile ? 14 : 24;                    // matches .dash-content padding
+
+  // -- CSS variable (consumed by .chat-layout height calc and any other rule) --
+  document.documentElement.style.setProperty('--available-vh', `${availH}px`);
+
+  // -- dash-content bottom padding keeps scrollable content above the fixed nav --
+  dashContent.style.paddingBottom = isMobile ? `${navH + padH}px` : '';
+
+  // -- Every section gets a min-height so it fills the full visible area --
+  document.querySelectorAll('.dash-section').forEach(s => {
+    s.style.minHeight = `${availH}px`;
+  });
+
+  // -- Chat layout gets an exact height (panel doesn't scroll; messages do) --
+  const chatLayout = document.querySelector('.chat-layout');
+  if (chatLayout) {
+    chatLayout.style.height = `${availH - padH * 2}px`;
+  }
+}
 
 // ── Data Loaders ─────────────────────────────────────────────
 async function loadProfile()      { const { data } = await db.from('profiles').select('*').eq('id', App.user.id).single(); if (data) App.profile = data; }

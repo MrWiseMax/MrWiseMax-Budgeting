@@ -27,6 +27,12 @@ const Chat = (() => {
   let lastMsgTs     = null;
   let pollInterval  = null;   // foreground message poll (runs while messages section is open)
 
+  // ── Pagination state (reset on each conversation open) ─────
+  const PAGE_SIZE      = 30;
+  let oldestLoadedTs   = null;   // created_at of the oldest message currently in the DOM
+  let hasMoreMessages  = false;  // false once we've reached the top of history
+  let isLoadingMore    = false;  // guard against concurrent fetches
+
   // ── Background badge poll ──────────────────────────────────
   // Runs every 15 s regardless of active section.
   // This is the primary unread-badge source — it reloads conversation
@@ -193,14 +199,22 @@ const Chat = (() => {
       .in('id', otherIds);
     const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
 
-    const { data: lastMsgs } = await db.from('messages')
-      .select('conversation_id, content, created_at, sender_id')
-      .in('conversation_id', data.map(c => c.id))
-      .order('created_at', { ascending: false });
-
+    // Fetch only the single most-recent message per conversation in parallel.
+    // This replaces a single unbounded query (all messages across all convs)
+    // with N cheap indexed lookups that each return exactly 1 row.
+    const lastMsgResults = await Promise.all(
+      data.map(c =>
+        db.from('messages')
+          .select('id, conversation_id, content, created_at, sender_id')
+          .eq('conversation_id', c.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      )
+    );
     const lastMsgMap = {};
-    (lastMsgs || []).forEach(m => {
-      if (!lastMsgMap[m.conversation_id]) lastMsgMap[m.conversation_id] = m;
+    lastMsgResults.forEach(({ data: m }) => {
+      if (m) lastMsgMap[m.conversation_id] = m;
     });
 
     conversations = data.map(c => ({
@@ -210,13 +224,19 @@ const Chat = (() => {
     }));
   }
 
-  async function loadMessages(convId) {
-    const { data } = await db.from('messages')
+  // Loads up to PAGE_SIZE messages.
+  // `before` is an ISO timestamp — when provided, only messages older than
+  // that timestamp are returned (used for scroll-up pagination).
+  // Results are always returned in chronological (ascending) order.
+  async function loadMessages(convId, before = null) {
+    let q = db.from('messages')
       .select('*')
       .eq('conversation_id', convId)
-      .order('created_at', { ascending: true })
-      .limit(100);
-    return data || [];
+      .order('created_at', { ascending: false })   // DESC so LIMIT cuts the oldest
+      .limit(PAGE_SIZE);
+    if (before) q = q.lt('created_at', before);
+    const { data } = await q;
+    return (data || []).reverse();                 // flip back to chronological order
   }
 
   // ── Render ────────────────────────────────────────────────
@@ -288,6 +308,7 @@ const Chat = (() => {
   function renderChatPlaceholder() {
     const win = document.getElementById('chat-window');
     if (!win) return;
+    win.classList.remove('open');
     win.innerHTML = `<div class="chat-placeholder">
       <div class="chat-placeholder-icon">💬</div>
       <p>Select a conversation or search for a user to start chatting.</p>
@@ -305,15 +326,27 @@ const Chat = (() => {
     const contact  = contacts.find(c => c.contact_id === activeOtherUser.id);
     const category = contact?.category ?? 'primary';
 
+    // Reset pagination state for the newly opened conversation
     shownMsgIds.clear();
-    lastMsgTs = null;
+    lastMsgTs       = null;
+    oldestLoadedTs  = null;
+    hasMoreMessages = false;
+    isLoadingMore   = false;
+
     messages.forEach(m => {
       shownMsgIds.add(m.id);
       if (!lastMsgTs || m.created_at > lastMsgTs) lastMsgTs = m.created_at;
     });
+    if (messages.length > 0) oldestLoadedTs = messages[0].created_at;
+    if (messages.length === PAGE_SIZE) hasMoreMessages = true; // may be more above
 
     win.innerHTML = `
       <div class="chat-header">
+        <button class="chat-back-btn" onclick="Chat.closeChat()" title="Back to contacts">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/>
+          </svg>
+        </button>
         <div class="chat-header-user" onclick="Chat.openConversationById('${activeOtherUser.id}')">
           <div class="chat-header-avatar">${av ? `<img src="${av}" alt="${name}">` : UI.avatarInitials(name)}</div>
           <div>
@@ -344,6 +377,7 @@ const Chat = (() => {
       </div>`;
 
     scrollToBottom();
+    wireMessagesScroll();
   }
 
   function msgBubble(m, myId) {
@@ -363,6 +397,78 @@ const Chat = (() => {
   function scrollToBottom() {
     const el = document.getElementById('chat-messages-list');
     if (el) setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+  }
+
+  // ── Scroll-up pagination ──────────────────────────────────
+  // Attaches a scroll listener to the messages list once per conversation.
+  // Triggers loadMoreMessages() when the user scrolls within 80 px of the top.
+
+  function wireMessagesScroll() {
+    const list = document.getElementById('chat-messages-list');
+    if (!list || list.dataset.scrollWired) return;
+    list.dataset.scrollWired = '1';
+    list.addEventListener('scroll', () => {
+      if (list.scrollTop < 80 && hasMoreMessages && !isLoadingMore) {
+        loadMoreMessages();
+      }
+    });
+  }
+
+  async function loadMoreMessages() {
+    if (isLoadingMore || !hasMoreMessages || !activeConvId || !oldestLoadedTs) return;
+    isLoadingMore = true;
+
+    const list = document.getElementById('chat-messages-list');
+    if (!list) { isLoadingMore = false; return; }
+
+    // Temporary loading row pinned to the top
+    const spinner = document.createElement('div');
+    spinner.className = 'chat-load-more';
+    spinner.innerHTML = '<span class="chat-load-more-dot"></span><span class="chat-load-more-dot"></span><span class="chat-load-more-dot"></span>';
+    list.prepend(spinner);
+
+    const older = await loadMessages(activeConvId, oldestLoadedTs);
+    spinner.remove();
+
+    if (!older.length) {
+      hasMoreMessages = false;
+      // Show a permanent "start of conversation" marker
+      if (!list.querySelector('.chat-history-start')) {
+        const marker = document.createElement('div');
+        marker.className = 'chat-history-start';
+        marker.textContent = 'Beginning of conversation';
+        list.prepend(marker);
+      }
+      isLoadingMore = false;
+      return;
+    }
+
+    if (older.length < PAGE_SIZE) hasMoreMessages = false;
+
+    // Snapshot current scroll position so the view doesn't jump after prepend
+    const prevScrollHeight = list.scrollHeight;
+    const prevScrollTop    = list.scrollTop;
+
+    // Build a fragment with only messages not already in the DOM
+    const fragment = document.createDocumentFragment();
+    older.forEach(m => {
+      if (shownMsgIds.has(m.id)) return;
+      shownMsgIds.add(m.id);
+      // Note: do NOT update lastMsgTs here — these are older messages,
+      // and lastMsgTs must stay at the newest message for the poll to work.
+      const el = document.createElement('div');
+      el.innerHTML = msgBubble(m, App.user.id);
+      fragment.appendChild(el.firstElementChild);
+    });
+    list.prepend(fragment);
+
+    // Move cursor back so the next page loads the right older batch
+    oldestLoadedTs = older[0].created_at;
+
+    // Restore the user's scroll position (compensate for newly added height above)
+    list.scrollTop = prevScrollTop + (list.scrollHeight - prevScrollHeight);
+
+    isLoadingMore = false;
   }
 
   // ── Actions ───────────────────────────────────────────────
@@ -395,6 +501,20 @@ const Chat = (() => {
 
     renderContactList();
     await renderMessages();
+    document.getElementById('chat-window')?.classList.add('open');
+  }
+
+  function closeChat() {
+    const win = document.getElementById('chat-window');
+    win?.classList.remove('open');
+    activeConvId    = null;
+    activeOtherUser = null;
+    renderContactList();
+    // Reset window content after the slide-out transition (200 ms)
+    setTimeout(() => {
+      const w = document.getElementById('chat-window');
+      if (w && !w.classList.contains('open')) renderChatPlaceholder();
+    }, 210);
   }
 
   async function ensureContact(userId) {
@@ -710,7 +830,7 @@ const Chat = (() => {
   // ── Public exports ────────────────────────────────────────
   return {
     init, initGlobal, startChat,
-    openConversationById, openConversation,
+    openConversationById, openConversation, closeChat,
     send, setCategory, setFilter, ensureContact,
     startTimeUpdater, stopTimeUpdater,
     startMessagePoll, stopMessagePoll,
