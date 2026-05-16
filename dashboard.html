@@ -61,9 +61,11 @@
   <div class="dash-main">
     <!-- Topbar -->
     <header class="topbar">
-      <span class="topbar-title" id="topbar-section-title">Overview</span>
+      <div class="user-avatar" style="cursor:pointer" data-nav="profile" onclick="navigateTo('profile')" title="Profile"></div>
       <div class="topbar-actions">
-        <div class="user-avatar" style="cursor:pointer" data-nav="profile" onclick="navigateTo('profile')" title="Profile"></div>
+        <button class="topbar-messages-btn" data-nav="messages" onclick="navigateTo('messages')" title="Messages">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
       </div>
     </header>
 
@@ -503,6 +505,13 @@
             </div>
           </div>
         </div>
+
+        <!-- Saved Blueprints embedded in Profile -->
+        <div class="card" style="margin-top:20px">
+          <div class="card-title" style="margin-bottom:14px">🔖 Saved Blueprints</div>
+          <div class="blueprint-feed" id="profile-saved-blueprints-grid"></div>
+        </div>
+
       </section>
 
       <!-- ═══════════════════════════════════════
@@ -553,6 +562,16 @@
   </div><!-- /.dash-main -->
 </div><!-- /.dash-layout -->
 
+<!-- ── Others Popup (sits above mobile nav) ───────────────────── -->
+<div class="mobile-more-popup" id="mobile-more-popup">
+  <button class="mobile-more-item" onclick="mobileMoreNav('simulate')">
+    <span class="mobile-more-icon">🔮</span>Simulations
+  </button>
+  <button class="mobile-more-item" onclick="mobileMoreNav('compare')">
+    <span class="mobile-more-icon">⚖️</span>Plan Comparison
+  </button>
+</div>
+
 <!-- ── Mobile Bottom Navigation ─────────────────────────────── -->
 <nav class="mobile-nav">
   <button class="mobile-nav-item active" data-nav="overview">
@@ -561,20 +580,54 @@
   <button class="mobile-nav-item" data-nav="vault">
     <span class="mobile-nav-icon">🏦</span>Vault
   </button>
+  <button class="mobile-nav-item" data-nav="plans">
+    <span class="mobile-nav-icon">📋</span>Plans
+  </button>
   <button class="mobile-nav-item" data-nav="community">
     <span class="mobile-nav-icon">🌐</span>Community
   </button>
-  <button class="mobile-nav-item" data-nav="messages">
-    <span class="mobile-nav-icon">💬</span>Messages
-  </button>
-  <button class="mobile-nav-item" data-nav="profile">
-    <span class="mobile-nav-icon">👤</span>Profile
+  <button class="mobile-nav-item" id="mobile-others-btn" onclick="toggleMobileMore(event)">
+    <span class="mobile-nav-icon">
+      <svg width="20" height="15" viewBox="0 0 20 15" fill="currentColor">
+        <rect y="0"    width="20" height="2.5" rx="1.25"/>
+        <rect y="6.25" width="20" height="2.5" rx="1.25"/>
+        <rect y="12.5" width="20" height="2.5" rx="1.25"/>
+      </svg>
+    </span>Others
   </button>
 </nav>
 
 <!-- ════════════════════════════════════════════
      MODALS
 ════════════════════════════════════════════ -->
+
+<!-- Crop Avatar Modal -->
+<div class="modal" id="crop-modal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h2>Crop Photo</h2>
+      <button class="modal-close" onclick="UI.closeModal('crop-modal')">✕</button>
+    </div>
+    <div class="crop-wrap" id="crop-wrap">
+      <img id="crop-source-img" alt="crop source">
+      <div class="crop-box" id="crop-box">
+        <div class="crop-handle crop-handle-nw" data-dir="nw"></div>
+        <div class="crop-handle crop-handle-ne" data-dir="ne"></div>
+        <div class="crop-handle crop-handle-sw" data-dir="sw"></div>
+        <div class="crop-handle crop-handle-se" data-dir="se"></div>
+      </div>
+    </div>
+    <div class="crop-preview-row">
+      <span class="crop-preview-label">Preview</span>
+      <canvas id="crop-preview-canvas" width="56" height="56"></canvas>
+    </div>
+    <canvas id="crop-canvas" style="display:none"></canvas>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="UI.closeModal('crop-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmCrop()">Apply &amp; Upload</button>
+    </div>
+  </div>
+</div>
 
 <!-- Confirm Dialog -->
 <div class="modal" id="confirm-modal">

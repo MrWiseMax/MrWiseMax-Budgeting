@@ -77,12 +77,12 @@ function navigateTo(section) {
   UI.showSection(section);
   document.querySelectorAll('[data-nav]').forEach(el => el.classList.toggle('active', el.dataset.nav === section));
 
-  // Update topbar title
-  const titles = { overview:'Overview', vault:'Budget Vault', plans:'Budget Plans', simulate:'Simulations',
-    compare:'Plan Comparison', community:'Community', saved:'Saved Blueprints', education:'Education',
-    profile:'Profile', messages:'Messages' };
-  const titleEl = document.getElementById('topbar-section-title');
-  if (titleEl) titleEl.textContent = titles[section] || section;
+  // Others button active when simulate or compare is selected
+  const othersBtn = document.getElementById('mobile-others-btn');
+  if (othersBtn) othersBtn.classList.toggle('active', ['simulate', 'compare'].includes(section));
+
+  // Close Others popup whenever we navigate
+  document.getElementById('mobile-more-popup')?.classList.remove('open');
 
   const loaders = { overview: renderOverview, vault: renderVault, plans: renderPlans,
     simulate: renderSimulate, compare: renderCompare, community: loadAndRenderCommunity,
@@ -90,6 +90,21 @@ function navigateTo(section) {
     messages: () => Chat.init() };
   if (loaders[section]) loaders[section]();
 }
+
+function toggleMobileMore(e) {
+  e.stopPropagation();
+  document.getElementById('mobile-more-popup')?.classList.toggle('open');
+}
+
+function mobileMoreNav(section) {
+  document.getElementById('mobile-more-popup')?.classList.remove('open');
+  navigateTo(section);
+}
+
+// Close Others popup when tapping anywhere else
+document.addEventListener('click', () => {
+  document.getElementById('mobile-more-popup')?.classList.remove('open');
+});
 
 // ── Data Loaders ─────────────────────────────────────────────
 async function loadProfile()      { const { data } = await db.from('profiles').select('*').eq('id', App.user.id).single(); if (data) App.profile = data; }
@@ -1194,8 +1209,8 @@ async function shareBlueprint() {
 }
 
 // ── SAVED BLUEPRINTS ──────────────────────────────────────────
-async function loadAndRenderSaved() {
-  const el = document.getElementById('saved-blueprints-grid');
+async function loadAndRenderSaved(gridId = 'saved-blueprints-grid') {
+  const el = document.getElementById(gridId);
   if (!el) return;
   el.innerHTML = '<div class="loading-state">Loading saved blueprints…</div>';
 
@@ -1234,33 +1249,26 @@ function renderProfile() {
       : `<span>${UI.avatarInitials(name || App.profile?.username || 'U')}</span>`;
   }
 
-  // Wire up avatar upload button in profile section
+  // Wire up avatar upload → crop flow
   const fileInput = document.getElementById('profile-avatar-file');
   const uploadBtn = document.getElementById('profile-avatar-upload-btn');
   if (uploadBtn && fileInput && !uploadBtn.dataset.wired) {
     uploadBtn.dataset.wired = '1';
     uploadBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', async (e) => {
+    fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
+      fileInput.value = '';
       if (!file) return;
-      if (file.size > 5 * 1024 * 1024) { UI.toast('Image must be under 5 MB.', 'error'); return; }
-      uploadBtn.textContent = 'Uploading…';
-      uploadBtn.disabled = true;
-      const url = await uploadAvatar(file);
-      if (url) {
-        App.profile.avatar_url_storage = url;
-        renderUserInfo();
-        renderProfile();
-        UI.toast('Profile photo updated!', 'success');
-      }
-      uploadBtn.textContent = 'Change Photo';
-      uploadBtn.disabled = false;
+      if (file.size > 10 * 1024 * 1024) { UI.toast('Image must be under 10 MB.', 'error'); return; }
+      openCropModal(file);
     });
   }
 
   setText('profile-stat-transactions', App.transactions.length);
   setText('profile-stat-plans',        App.plans.length);
   setText('profile-stat-goals',        App.goals.length);
+
+  loadAndRenderSaved('profile-saved-blueprints-grid');
 }
 
 async function uploadAvatar(file) {
@@ -1518,3 +1526,151 @@ document.addEventListener('DOMContentLoaded', () => {
   initDashboard();
   setupSignOut();
 });
+
+// ── IMAGE CROP ────────────────────────────────────────────────
+const _crop = { file: null, x: 0, y: 0, size: 0 };
+
+function openCropModal(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _crop.file = file;
+    const img = document.getElementById('crop-source-img');
+    img.onload = () => { setupCropBox(); initCropDrag(); };
+    img.src = ev.target.result;
+    UI.openModal('crop-modal');
+  };
+  reader.readAsDataURL(file);
+}
+
+function setupCropBox() {
+  const img  = document.getElementById('crop-source-img');
+  const wrap = document.getElementById('crop-wrap');
+  const ir   = img.getBoundingClientRect();
+  const wr   = wrap.getBoundingClientRect();
+  const size = Math.round(Math.min(ir.width, ir.height) * 0.72);
+  _crop.x    = Math.round((ir.width  - size) / 2 + ir.left - wr.left);
+  _crop.y    = Math.round((ir.height - size) / 2 + ir.top  - wr.top);
+  _crop.size = size;
+  applyCropBox();
+  updateCropPreview();
+}
+
+function applyCropBox() {
+  const box = document.getElementById('crop-box');
+  if (!box) return;
+  box.style.left   = _crop.x + 'px';
+  box.style.top    = _crop.y + 'px';
+  box.style.width  = _crop.size + 'px';
+  box.style.height = _crop.size + 'px';
+}
+
+function clampCrop() {
+  const img  = document.getElementById('crop-source-img');
+  const wrap = document.getElementById('crop-wrap');
+  if (!img || !wrap) return;
+  const ir = img.getBoundingClientRect();
+  const wr = wrap.getBoundingClientRect();
+  const ox = ir.left - wr.left;
+  const oy = ir.top  - wr.top;
+  _crop.size = Math.max(40, Math.min(Math.min(ir.width, ir.height), _crop.size));
+  _crop.x    = Math.max(ox, Math.min(ox + ir.width  - _crop.size, _crop.x));
+  _crop.y    = Math.max(oy, Math.min(oy + ir.height - _crop.size, _crop.y));
+}
+
+function updateCropPreview() {
+  const canvas = document.getElementById('crop-preview-canvas');
+  const img    = document.getElementById('crop-source-img');
+  const wrap   = document.getElementById('crop-wrap');
+  if (!canvas || !img || !wrap) return;
+  const ir  = img.getBoundingClientRect();
+  const wr  = wrap.getBoundingClientRect();
+  const ox  = ir.left - wr.left;
+  const oy  = ir.top  - wr.top;
+  const sx  = img.naturalWidth  / ir.width;
+  const sy  = img.naturalHeight / ir.height;
+  const cx  = (_crop.x - ox) * sx;
+  const cy  = (_crop.y - oy) * sy;
+  const cs  = _crop.size * sx;
+  const OUT = 56;
+  canvas.width = OUT; canvas.height = OUT;
+  const ctx = canvas.getContext('2d');
+  ctx.save();
+  ctx.beginPath(); ctx.arc(OUT / 2, OUT / 2, OUT / 2, 0, Math.PI * 2); ctx.clip();
+  ctx.drawImage(img, cx, cy, cs, cs, 0, 0, OUT, OUT);
+  ctx.restore();
+}
+
+function initCropDrag() {
+  const box = document.getElementById('crop-box');
+  if (!box || box.dataset.wired) return;
+  box.dataset.wired = '1';
+  let startX, startY, startCX, startCY, startSz, mode;
+
+  box.addEventListener('pointerdown', e => {
+    const tgt = e.target;
+    mode   = tgt.classList.contains('crop-handle') ? tgt.dataset.dir : 'move';
+    startX = e.clientX; startY = e.clientY;
+    startCX = _crop.x; startCY = _crop.y; startSz = _crop.size;
+    box.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+
+  box.addEventListener('pointermove', e => {
+    if (!mode) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (mode === 'move') {
+      _crop.x = startCX + dx;
+      _crop.y = startCY + dy;
+    } else if (mode === 'se') {
+      _crop.size = startSz + dx;
+    } else if (mode === 'nw') {
+      _crop.size = startSz - dx;
+      _crop.x = startCX + dx;
+      _crop.y = startCY + dx;
+    } else if (mode === 'ne') {
+      _crop.size = startSz + dx;
+      _crop.y = startCY - dx;
+    } else if (mode === 'sw') {
+      _crop.size = startSz + dy;
+      _crop.x = startCX - dy;
+    }
+    clampCrop(); applyCropBox(); updateCropPreview();
+  });
+
+  box.addEventListener('pointerup', () => { mode = null; });
+}
+
+async function confirmCrop() {
+  const img  = document.getElementById('crop-source-img');
+  const wrap = document.getElementById('crop-wrap');
+  if (!img || !wrap) return;
+  const ir  = img.getBoundingClientRect();
+  const wr  = wrap.getBoundingClientRect();
+  const ox  = ir.left - wr.left;
+  const oy  = ir.top  - wr.top;
+  const sx  = img.naturalWidth  / ir.width;
+  const sy  = img.naturalHeight / ir.height;
+  const cx  = (_crop.x - ox) * sx;
+  const cy  = (_crop.y - oy) * sy;
+  const cs  = _crop.size * sx;
+  const OUT = 512;
+  const canvas = document.getElementById('crop-canvas');
+  canvas.width = OUT; canvas.height = OUT;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, cx, cy, cs, cs, 0, 0, OUT, OUT);
+  canvas.toBlob(async blob => {
+    UI.closeModal('crop-modal');
+    const uploadBtn = document.getElementById('profile-avatar-upload-btn');
+    if (uploadBtn) { uploadBtn.textContent = 'Uploading…'; uploadBtn.disabled = true; }
+    const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
+    const url  = await uploadAvatar(file);
+    if (url) {
+      App.profile.avatar_url_storage = url;
+      renderUserInfo();
+      renderProfile();
+      UI.toast('Profile photo updated!', 'success');
+    }
+    if (uploadBtn) { uploadBtn.textContent = 'Change Photo'; uploadBtn.disabled = false; }
+  }, 'image/jpeg', 0.92);
+}
