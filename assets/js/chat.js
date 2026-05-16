@@ -11,22 +11,27 @@ const Chat = (() => {
   let conversations   = [];
   let activeConvId    = null;
   let activeOtherUser = null;
-  let globalSub       = null;
   let contactFilter   = 'all';
   let contactSearch   = '';
   let timeUpdateInterval = null;
 
-  // Conversation IDs with unread messages from PRIMARY contacts (badge tracking)
+  // One WebSocket channel per conversation (conv_id → channel)
+  // NOTE: Supabase Realtime postgres_changes only supports `eq` as a filter
+  // operator — `in` is not valid. We therefore create one channel per
+  // conversation so every subscription uses `conversation_id=eq.<id>`.
+  const convChannels = new Map();
+
+  // Conversations with unread messages from PRIMARY contacts
   const unreadPrimaryConvIds = new Set();
 
   // ── Public API ────────────────────────────────────────────
 
-  // Called once at dashboard startup — enables badge tracking in the background
+  // Called once at dashboard startup — starts background badge tracking
   async function initGlobal() {
     try {
       await Promise.all([loadContacts(), loadConversations()]);
-      subscribeGlobal();
-    } catch (_) { /* non-critical */ }
+      syncConvSubscriptions();
+    } catch (_) { /* non-critical on startup */ }
   }
 
   // Called when the user opens the messages section
@@ -35,15 +40,18 @@ const Chat = (() => {
     renderContactList();
     renderChatPlaceholder();
     wireSearchInput();
-    subscribeGlobal(); // Refresh subscription with latest conversation list
+    syncConvSubscriptions();
     startTimeUpdater();
   }
 
-  // Called from community / user search when clicking "Message"
+  // Called from community / user search → "Message" button
   async function startChat(userId, displayName, username) {
     await ensureContact(userId);
     navigateTo('messages');
-    await openConversation({ id: userId, username, nickname: displayName, avatar_url: null, avatar_url_storage: null });
+    await openConversation({
+      id: userId, username, nickname: displayName,
+      avatar_url: null, avatar_url_storage: null,
+    });
   }
 
   // ── Data ──────────────────────────────────────────────────
@@ -65,16 +73,15 @@ const Chat = (() => {
 
     if (!data?.length) { conversations = []; return; }
 
-    const otherIds = data.map(c => c.user1_id === uid ? c.user2_id : c.user1_id);
+    const otherIds = [...new Set(data.map(c => c.user1_id === uid ? c.user2_id : c.user1_id))];
     const { data: profiles } = await db.from('profiles')
       .select('id, username, nickname, avatar_url, avatar_url_storage')
-      .in('id', [...new Set(otherIds)]);
+      .in('id', otherIds);
     const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
 
-    const convIds = data.map(c => c.id);
     const { data: lastMsgs } = await db.from('messages')
       .select('conversation_id, content, created_at, sender_id')
-      .in('conversation_id', convIds)
+      .in('conversation_id', data.map(c => c.id))
       .order('created_at', { ascending: false });
 
     const lastMsgMap = {};
@@ -141,13 +148,16 @@ const Chat = (() => {
       const name      = p.nickname || p.username || 'User';
       const av        = p.avatar_url_storage || p.avatar_url;
       const isActive  = item.convId === activeConvId;
-      const hasUnread = item.convId && unreadPrimaryConvIds.has(item.convId);
+      const hasUnread = item.convId ? unreadPrimaryConvIds.has(item.convId) : false;
       const isPrimary = item.category === 'primary';
       const lastMsg   = item.lastMessage
-        ? (item.lastMessage.sender_id === uid ? 'You: ' : '') + item.lastMessage.content.slice(0, 40) + (item.lastMessage.content.length > 40 ? '…' : '')
+        ? (item.lastMessage.sender_id === uid ? 'You: ' : '') +
+          item.lastMessage.content.slice(0, 40) +
+          (item.lastMessage.content.length > 40 ? '…' : '')
         : 'Say hello!';
 
-      return `<div class="chat-contact-item ${isActive ? 'active' : ''} ${hasUnread ? 'has-unread' : ''}" onclick="Chat.openConversationById('${p.id}')">
+      return `<div class="chat-contact-item ${isActive ? 'active' : ''} ${hasUnread ? 'has-unread' : ''}"
+                   onclick="Chat.openConversationById('${p.id}')">
         <div class="chat-contact-avatar">${av ? `<img src="${av}" alt="${name}">` : UI.avatarInitials(name)}</div>
         <div class="chat-contact-info">
           <div class="chat-contact-top">
@@ -179,7 +189,7 @@ const Chat = (() => {
     const name     = activeOtherUser.nickname || activeOtherUser.username || 'User';
     const av       = activeOtherUser.avatar_url_storage || activeOtherUser.avatar_url;
     const contact  = contacts.find(c => c.contact_id === activeOtherUser.id);
-    const category = contact?.category || 'general';
+    const category = contact?.category ?? 'primary';
 
     win.innerHTML = `
       <div class="chat-header">
@@ -190,9 +200,11 @@ const Chat = (() => {
             <span class="chat-header-handle">@${activeOtherUser.username}</span>
           </div>
         </div>
-        <select class="chat-category-select" onchange="Chat.setCategory('${activeOtherUser.id}', this.value)" title="List category">
-          <option value="general" ${category === 'general' ? 'selected' : ''}>General</option>
+        <select class="chat-category-select"
+                onchange="Chat.setCategory('${activeOtherUser.id}', this.value)"
+                title="List category">
           <option value="primary" ${category === 'primary' ? 'selected' : ''}>Primary</option>
+          <option value="general" ${category === 'general' ? 'selected' : ''}>General</option>
         </select>
       </div>
       <div class="chat-messages" id="chat-messages-list">
@@ -219,7 +231,9 @@ const Chat = (() => {
   }
 
   function escapeHtml(str) {
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function scrollToBottom() {
@@ -232,14 +246,12 @@ const Chat = (() => {
   async function openConversationById(userId) {
     let profile = contacts.find(c => c.contact_id === userId)?.profile
                || conversations.find(cv => cv.otherProfile?.id === userId)?.otherProfile;
-
     if (!profile) {
       const { data } = await db.from('profiles')
         .select('id, username, nickname, avatar_url, avatar_url_storage')
         .eq('id', userId).single();
       profile = data;
     }
-
     if (profile) await openConversation(profile);
   }
 
@@ -250,12 +262,12 @@ const Chat = (() => {
     if (error) { UI.toast('Could not open conversation.', 'error'); return; }
 
     activeConvId = convId;
-    markRead(convId); // Clear badge for this conversation
+    markRead(convId);
 
-    // If this is a brand-new conversation, reload the list and re-subscribe
+    // If this is a new conversation, refresh list and add its subscription
     if (!conversations.find(c => c.id === convId)) {
       await loadConversations();
-      subscribeGlobal();
+      syncConvSubscriptions();
     }
 
     renderContactList();
@@ -264,8 +276,9 @@ const Chat = (() => {
 
   async function ensureContact(userId) {
     if (contacts.find(c => c.contact_id === userId)) return;
+    // Default to 'primary' so new chats show badge notifications immediately
     await db.from('contacts').upsert(
-      [{ user_id: App.user.id, contact_id: userId, category: 'general' }],
+      [{ user_id: App.user.id, contact_id: userId, category: 'primary' }],
       { onConflict: 'user_id,contact_id' }
     );
     await loadContacts();
@@ -275,7 +288,7 @@ const Chat = (() => {
     const input   = document.getElementById('chat-msg-input');
     const content = input?.value.trim();
     if (!content || !activeConvId) return;
-    input.value   = '';
+    input.value = '';
 
     const { data: msg, error } = await db.from('messages')
       .insert([{ conversation_id: activeConvId, sender_id: App.user.id, content }])
@@ -288,18 +301,16 @@ const Chat = (() => {
       return;
     }
 
-    // Optimistic UI — append our own message immediately
+    // Append own message to UI immediately (optimistic)
     const list = document.getElementById('chat-messages-list');
     if (list) {
-      const placeholder = list.querySelector('.chat-no-messages');
-      if (placeholder) placeholder.remove();
+      list.querySelector('.chat-no-messages')?.remove();
       const el = document.createElement('div');
       el.innerHTML = msgBubble(msg, App.user.id);
       list.appendChild(el.firstElementChild);
       scrollToBottom();
     }
 
-    // Update state so contact list shows our latest message
     const cv = conversations.find(c => c.id === activeConvId);
     if (cv) cv.lastMessage = msg;
     renderContactList();
@@ -317,22 +328,43 @@ const Chat = (() => {
     UI.toast(`Moved to ${category === 'primary' ? 'Primary' : 'General'}.`, 'success');
   }
 
-  // ── Realtime ──────────────────────────────────────────────
+  // ── Realtime WebSocket Subscriptions ──────────────────────
+  //
+  // Supabase Realtime postgres_changes supports ONLY `eq` as a row filter
+  // operator. The `in` operator does not work. We therefore open one channel
+  // per conversation — each using `conversation_id=eq.<id>` — and keep them
+  // in `convChannels` so we never create duplicates and can tear them down
+  // cleanly when conversations are removed.
 
-  function subscribeGlobal() {
-    if (globalSub) { db.removeChannel(globalSub); globalSub = null; }
+  function syncConvSubscriptions() {
+    const currentIds = new Set(conversations.map(c => c.id));
 
-    const convIds = conversations.map(c => c.id);
-    if (!convIds.length) return;
+    // Remove channels for conversations no longer in our list
+    for (const [id, ch] of convChannels) {
+      if (!currentIds.has(id)) {
+        db.removeChannel(ch);
+        convChannels.delete(id);
+      }
+    }
 
-    globalSub = db.channel('chat-global')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'messages',
-        filter: `conversation_id=in.(${convIds.join(',')})`,
-      }, handleIncomingMessage)
-      .subscribe();
+    // Open a channel for each conversation we don't have one for yet
+    for (const conv of conversations) {
+      if (convChannels.has(conv.id)) continue;
+      const ch = db
+        .channel(`conv-msg-${conv.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${conv.id}`,
+          },
+          handleIncomingMessage
+        )
+        .subscribe();
+      convChannels.set(conv.id, ch);
+    }
   }
 
   function handleIncomingMessage(payload) {
@@ -340,19 +372,19 @@ const Chat = (() => {
     const convId      = m.conversation_id;
     const isMyMessage = m.sender_id === App.user.id;
 
-    // Update last message preview in state
+    // Update last-message preview in state
     const cv = conversations.find(c => c.id === convId);
     if (cv) cv.lastMessage = m;
 
-    const section      = document.getElementById('section-messages');
-    const isChatVisible = section?.classList.contains('active');
+    const section       = document.getElementById('section-messages');
+    const isChatVisible = section?.classList.contains('active') ?? false;
 
-    // Append incoming message to the open chat window
+    // Append incoming message to the open chat window (not our own — those are
+    // already appended optimistically in send())
     if (!isMyMessage && convId === activeConvId && isChatVisible) {
       const list = document.getElementById('chat-messages-list');
       if (list) {
-        const placeholder = list.querySelector('.chat-no-messages');
-        if (placeholder) placeholder.remove();
+        list.querySelector('.chat-no-messages')?.remove();
         const el = document.createElement('div');
         el.innerHTML = msgBubble(m, App.user.id);
         list.appendChild(el.firstElementChild);
@@ -360,10 +392,11 @@ const Chat = (() => {
       }
     }
 
-    // Refresh contact list preview if user is on the messages page
+    // Refresh contact-list preview while on the messages page
     if (isChatVisible) renderContactList();
 
-    // Badge: only when messages page is NOT visible, and sender is a PRIMARY contact
+    // Badge: increment only when the messages page is NOT visible AND
+    // the sender is in our PRIMARY contacts list
     if (!isMyMessage && !isChatVisible) {
       const contact = contacts.find(c => c.contact_id === m.sender_id);
       if (contact?.category === 'primary') {
@@ -391,14 +424,14 @@ const Chat = (() => {
   }
 
   // ── Timestamp Updater ─────────────────────────────────────
-  // Runs while messages section is open; only touches the currently rendered chat
+  // Ticks every 60 s while the messages section is open.
+  // Only updates elements already rendered in #chat-messages-list.
 
   function startTimeUpdater() {
     if (timeUpdateInterval) return;
     timeUpdateInterval = setInterval(() => {
-      document.querySelectorAll('#chat-messages-list .chat-msg-time[data-ts]').forEach(el => {
-        el.textContent = UI.timeAgo(el.dataset.ts);
-      });
+      document.querySelectorAll('#chat-messages-list .chat-msg-time[data-ts]')
+        .forEach(el => { el.textContent = UI.timeAgo(el.dataset.ts); });
     }, 60_000);
   }
 

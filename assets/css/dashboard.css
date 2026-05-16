@@ -1748,7 +1748,7 @@ select.input {
 }
 
 /* ── Topbar Messages Button ──────────────────────────────── */
-.topbar-messages-btn { 
+.topbar-messages-btn {
   width: 35px;
   height: 35px;
   border-radius: 50%;
