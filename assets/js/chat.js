@@ -7,30 +7,42 @@ const Chat = (() => {
   'use strict';
 
   // ── State ─────────────────────────────────────────────────
-  let contacts        = [];     // { user_id, contact_id, category, profile }
-  let conversations   = [];     // { id, user1_id, user2_id, otherProfile, lastMessage }
+  let contacts        = [];
+  let conversations   = [];
   let activeConvId    = null;
-  let activeOtherUser = null;   // { id, username, nickname, avatar_url, avatar_url_storage }
-  let realtimeSub     = null;
-  let contactFilter   = 'all';  // 'all' | 'primary' | 'general'
+  let activeOtherUser = null;
+  let globalSub       = null;
+  let contactFilter   = 'all';
   let contactSearch   = '';
+  let timeUpdateInterval = null;
+
+  // Conversation IDs with unread messages from PRIMARY contacts (badge tracking)
+  const unreadPrimaryConvIds = new Set();
 
   // ── Public API ────────────────────────────────────────────
 
+  // Called once at dashboard startup — enables badge tracking in the background
+  async function initGlobal() {
+    try {
+      await Promise.all([loadContacts(), loadConversations()]);
+      subscribeGlobal();
+    } catch (_) { /* non-critical */ }
+  }
+
+  // Called when the user opens the messages section
   async function init() {
     await Promise.all([loadContacts(), loadConversations()]);
     renderContactList();
     renderChatPlaceholder();
     wireSearchInput();
+    subscribeGlobal(); // Refresh subscription with latest conversation list
+    startTimeUpdater();
   }
 
-  // Called from community page / user search when clicking "Message"
+  // Called from community / user search when clicking "Message"
   async function startChat(userId, displayName, username) {
-    // Add to contacts if not already there
     await ensureContact(userId);
-    // Navigate to messages section
     navigateTo('messages');
-    // Open conversation with this user
     await openConversation({ id: userId, username, nickname: displayName, avatar_url: null, avatar_url_storage: null });
   }
 
@@ -53,15 +65,12 @@ const Chat = (() => {
 
     if (!data?.length) { conversations = []; return; }
 
-    // Fetch other participants' profiles
     const otherIds = data.map(c => c.user1_id === uid ? c.user2_id : c.user1_id);
-    const uniq = [...new Set(otherIds)];
     const { data: profiles } = await db.from('profiles')
       .select('id, username, nickname, avatar_url, avatar_url_storage')
-      .in('id', uniq);
+      .in('id', [...new Set(otherIds)]);
     const pMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
 
-    // Fetch last message for each conversation
     const convIds = data.map(c => c.id);
     const { data: lastMsgs } = await db.from('messages')
       .select('conversation_id, content, created_at, sender_id')
@@ -95,14 +104,11 @@ const Chat = (() => {
     const el = document.getElementById('chat-contact-list');
     if (!el) return;
 
-    const uid = App.user.id;
+    const uid   = App.user.id;
     const query = contactSearch.toLowerCase();
-
-    // Merge contacts and conversations, de-duped by other user ID
-    const seen = new Set();
+    const seen  = new Set();
     const items = [];
 
-    // First: contacts (have explicit category)
     contacts.forEach(c => {
       const p = c.profile;
       if (!p) return;
@@ -110,17 +116,15 @@ const Chat = (() => {
       if (contactFilter !== 'all' && c.category !== contactFilter) return;
       if (seen.has(p.id)) return;
       seen.add(p.id);
-
       const conv = conversations.find(cv => cv.otherProfile?.id === p.id);
       items.push({ profile: p, category: c.category, lastMessage: conv?.lastMessage || null, convId: conv?.id || null });
     });
 
-    // Then: conversations with non-contact users
     conversations.forEach(cv => {
       const p = cv.otherProfile;
       if (!p || seen.has(p.id)) return;
       if (query && !p.username?.toLowerCase().includes(query) && !(p.nickname || '').toLowerCase().includes(query)) return;
-      if (contactFilter !== 'all') return; // non-contacts only show in 'all'
+      if (contactFilter !== 'all') return;
       seen.add(p.id);
       items.push({ profile: p, category: 'general', lastMessage: cv.lastMessage, convId: cv.id });
     });
@@ -133,16 +137,17 @@ const Chat = (() => {
     }
 
     el.innerHTML = items.map(item => {
-      const p    = item.profile;
-      const name = p.nickname || p.username || 'User';
-      const av   = p.avatar_url_storage || p.avatar_url;
-      const isActive = item.convId === activeConvId;
-      const lastMsg  = item.lastMessage
+      const p         = item.profile;
+      const name      = p.nickname || p.username || 'User';
+      const av        = p.avatar_url_storage || p.avatar_url;
+      const isActive  = item.convId === activeConvId;
+      const hasUnread = item.convId && unreadPrimaryConvIds.has(item.convId);
+      const isPrimary = item.category === 'primary';
+      const lastMsg   = item.lastMessage
         ? (item.lastMessage.sender_id === uid ? 'You: ' : '') + item.lastMessage.content.slice(0, 40) + (item.lastMessage.content.length > 40 ? '…' : '')
         : 'Say hello!';
-      const isPrimary = item.category === 'primary';
 
-      return `<div class="chat-contact-item ${isActive ? 'active' : ''}" onclick="Chat.openConversationById('${p.id}')">
+      return `<div class="chat-contact-item ${isActive ? 'active' : ''} ${hasUnread ? 'has-unread' : ''}" onclick="Chat.openConversationById('${p.id}')">
         <div class="chat-contact-avatar">${av ? `<img src="${av}" alt="${name}">` : UI.avatarInitials(name)}</div>
         <div class="chat-contact-info">
           <div class="chat-contact-top">
@@ -151,6 +156,7 @@ const Chat = (() => {
           </div>
           <span class="chat-contact-last">${lastMsg}</span>
         </div>
+        ${hasUnread ? '<span class="chat-unread-dot"></span>' : ''}
       </div>`;
     }).join('');
   }
@@ -172,10 +178,8 @@ const Chat = (() => {
     const uid      = App.user.id;
     const name     = activeOtherUser.nickname || activeOtherUser.username || 'User';
     const av       = activeOtherUser.avatar_url_storage || activeOtherUser.avatar_url;
-
-    // Find contact entry for category management
-    const contactEntry = contacts.find(c => c.contact_id === activeOtherUser.id);
-    const category     = contactEntry?.category || 'general';
+    const contact  = contacts.find(c => c.contact_id === activeOtherUser.id);
+    const category = contact?.category || 'general';
 
     win.innerHTML = `
       <div class="chat-header">
@@ -204,19 +208,18 @@ const Chat = (() => {
       </div>`;
 
     scrollToBottom();
-    subscribeToConversation(activeConvId);
   }
 
   function msgBubble(m, myId) {
     const isMine = m.sender_id === myId;
     return `<div class="chat-msg ${isMine ? 'mine' : 'theirs'}">
       <div class="chat-bubble">${escapeHtml(m.content)}</div>
-      <div class="chat-msg-time">${UI.timeAgo(m.created_at)}</div>
+      <div class="chat-msg-time" data-ts="${m.created_at}">${UI.timeAgo(m.created_at)}</div>
     </div>`;
   }
 
   function escapeHtml(str) {
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function scrollToBottom() {
@@ -227,11 +230,9 @@ const Chat = (() => {
   // ── Actions ───────────────────────────────────────────────
 
   async function openConversationById(userId) {
-    // Look up profile from contacts or conversations
     let profile = contacts.find(c => c.contact_id === userId)?.profile
                || conversations.find(cv => cv.otherProfile?.id === userId)?.otherProfile;
 
-    // Fallback: fetch from DB
     if (!profile) {
       const { data } = await db.from('profiles')
         .select('id, username, nickname, avatar_url, avatar_url_storage')
@@ -245,15 +246,16 @@ const Chat = (() => {
   async function openConversation(profile) {
     activeOtherUser = profile;
 
-    // Get or create conversation
     const { data: convId, error } = await db.rpc('get_or_create_conversation', { other_user_id: profile.id });
     if (error) { UI.toast('Could not open conversation.', 'error'); return; }
 
     activeConvId = convId;
+    markRead(convId); // Clear badge for this conversation
 
-    // Ensure they're in our conversations list
+    // If this is a brand-new conversation, reload the list and re-subscribe
     if (!conversations.find(c => c.id === convId)) {
       await loadConversations();
+      subscribeGlobal();
     }
 
     renderContactList();
@@ -262,7 +264,10 @@ const Chat = (() => {
 
   async function ensureContact(userId) {
     if (contacts.find(c => c.contact_id === userId)) return;
-    await db.from('contacts').upsert([{ user_id: App.user.id, contact_id: userId, category: 'general' }], { onConflict: 'user_id,contact_id' });
+    await db.from('contacts').upsert(
+      [{ user_id: App.user.id, contact_id: userId, category: 'general' }],
+      { onConflict: 'user_id,contact_id' }
+    );
     await loadContacts();
   }
 
@@ -270,14 +275,34 @@ const Chat = (() => {
     const input   = document.getElementById('chat-msg-input');
     const content = input?.value.trim();
     if (!content || !activeConvId) return;
-    input.value = '';
+    input.value   = '';
 
-    const { error } = await db.from('messages').insert([{
-      conversation_id: activeConvId,
-      sender_id:       App.user.id,
-      content,
-    }]);
-    if (error) { UI.toast('Could not send message.', 'error'); input.value = content; }
+    const { data: msg, error } = await db.from('messages')
+      .insert([{ conversation_id: activeConvId, sender_id: App.user.id, content }])
+      .select()
+      .single();
+
+    if (error) {
+      UI.toast('Could not send message.', 'error');
+      input.value = content;
+      return;
+    }
+
+    // Optimistic UI — append our own message immediately
+    const list = document.getElementById('chat-messages-list');
+    if (list) {
+      const placeholder = list.querySelector('.chat-no-messages');
+      if (placeholder) placeholder.remove();
+      const el = document.createElement('div');
+      el.innerHTML = msgBubble(msg, App.user.id);
+      list.appendChild(el.firstElementChild);
+      scrollToBottom();
+    }
+
+    // Update state so contact list shows our latest message
+    const cv = conversations.find(c => c.id === activeConvId);
+    if (cv) cv.lastMessage = msg;
+    renderContactList();
   }
 
   async function setCategory(userId, category) {
@@ -294,29 +319,91 @@ const Chat = (() => {
 
   // ── Realtime ──────────────────────────────────────────────
 
-  function subscribeToConversation(convId) {
-    if (realtimeSub) { db.removeChannel(realtimeSub); realtimeSub = null; }
+  function subscribeGlobal() {
+    if (globalSub) { db.removeChannel(globalSub); globalSub = null; }
 
-    realtimeSub = db.channel(`conv-${convId}`)
+    const convIds = conversations.map(c => c.id);
+    if (!convIds.length) return;
+
+    globalSub = db.channel('chat-global')
       .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'messages',
-        filter: `conversation_id=eq.${convId}`,
-      }, async (payload) => {
-        const list = document.getElementById('chat-messages-list');
-        if (!list) return;
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=in.(${convIds.join(',')})`,
+      }, handleIncomingMessage)
+      .subscribe();
+  }
 
-        const m  = payload.new;
+  function handleIncomingMessage(payload) {
+    const m           = payload.new;
+    const convId      = m.conversation_id;
+    const isMyMessage = m.sender_id === App.user.id;
+
+    // Update last message preview in state
+    const cv = conversations.find(c => c.id === convId);
+    if (cv) cv.lastMessage = m;
+
+    const section      = document.getElementById('section-messages');
+    const isChatVisible = section?.classList.contains('active');
+
+    // Append incoming message to the open chat window
+    if (!isMyMessage && convId === activeConvId && isChatVisible) {
+      const list = document.getElementById('chat-messages-list');
+      if (list) {
+        const placeholder = list.querySelector('.chat-no-messages');
+        if (placeholder) placeholder.remove();
         const el = document.createElement('div');
         el.innerHTML = msgBubble(m, App.user.id);
         list.appendChild(el.firstElementChild);
         scrollToBottom();
+      }
+    }
 
-        // Update last message in conversations list
-        const cv = conversations.find(c => c.id === convId);
-        if (cv) cv.lastMessage = m;
-        renderContactList();
-      })
-      .subscribe();
+    // Refresh contact list preview if user is on the messages page
+    if (isChatVisible) renderContactList();
+
+    // Badge: only when messages page is NOT visible, and sender is a PRIMARY contact
+    if (!isMyMessage && !isChatVisible) {
+      const contact = contacts.find(c => c.contact_id === m.sender_id);
+      if (contact?.category === 'primary') {
+        unreadPrimaryConvIds.add(convId);
+        updateBadge();
+      }
+    }
+  }
+
+  function markRead(convId) {
+    if (unreadPrimaryConvIds.delete(convId)) updateBadge();
+  }
+
+  function updateBadge() {
+    const btn = document.querySelector('.topbar-messages-btn');
+    if (!btn) return;
+    btn.querySelector('.msg-badge')?.remove();
+    const count = unreadPrimaryConvIds.size;
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.className   = 'msg-badge';
+      badge.textContent = count > 99 ? '99+' : String(count);
+      btn.appendChild(badge);
+    }
+  }
+
+  // ── Timestamp Updater ─────────────────────────────────────
+  // Runs while messages section is open; only touches the currently rendered chat
+
+  function startTimeUpdater() {
+    if (timeUpdateInterval) return;
+    timeUpdateInterval = setInterval(() => {
+      document.querySelectorAll('#chat-messages-list .chat-msg-time[data-ts]').forEach(el => {
+        el.textContent = UI.timeAgo(el.dataset.ts);
+      });
+    }, 60_000);
+  }
+
+  function stopTimeUpdater() {
+    if (timeUpdateInterval) { clearInterval(timeUpdateInterval); timeUpdateInterval = null; }
   }
 
   // ── Filter & Search ───────────────────────────────────────
@@ -337,5 +424,10 @@ const Chat = (() => {
   }
 
   // ── Public exports ────────────────────────────────────────
-  return { init, startChat, openConversationById, openConversation, send, setCategory, setFilter, ensureContact };
+  return {
+    init, initGlobal, startChat,
+    openConversationById, openConversation,
+    send, setCategory, setFilter, ensureContact,
+    startTimeUpdater, stopTimeUpdater,
+  };
 })();

@@ -1748,28 +1748,57 @@ select.input {
 }
 
 /* ── Topbar Messages Button ──────────────────────────────── */
-.topbar-messages-btn { 
-  width: 30px;
-  height: 30px;
-  background: none;
+.topbar-messages-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   border: none;
   cursor: pointer;
   display: none;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: opacity var(--ease);
   opacity: 0.85;
   color: #fff;
-  padding: 0;
-}
-
-.topbar-messages-btn svg {
-  width: 28px;
-  height: 28px;
 }
 
 .topbar-messages-btn:hover {
   opacity: 1;
+}
+
+/* ── Unread Messages Badge ───────────────────────────────── */
+.msg-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 100px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+  border: 2px solid var(--bg-card);
+}
+
+/* ── Chat contact unread indicator ──────────────────────── */
+.chat-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  margin-left: auto;
+  align-self: center;
 }
 
 /* ── Crop Modal ──────────────────────────────────────────── */

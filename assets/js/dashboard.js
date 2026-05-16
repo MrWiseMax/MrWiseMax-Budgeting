@@ -47,6 +47,7 @@ async function initDashboard() {
   setupNavigation();
   setupFilterListeners();
   subscribeToBlueprints();
+  Chat.initGlobal(); // Start background badge tracking
 }
 
 function renderUserInfo() {
@@ -83,6 +84,9 @@ function navigateTo(section) {
 
   // Close Others popup whenever we navigate
   document.getElementById('mobile-more-popup')?.classList.remove('open');
+
+  // Manage chat timestamp updater
+  if (section !== 'messages') Chat.stopTimeUpdater();
 
   const loaders = { overview: renderOverview, vault: renderVault, plans: renderPlans,
     simulate: renderSimulate, compare: renderCompare, community: loadAndRenderCommunity,
