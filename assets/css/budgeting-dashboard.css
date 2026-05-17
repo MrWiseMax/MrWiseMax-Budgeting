@@ -85,7 +85,8 @@ body {
 /* ── Layout ──────────────────────────────────────────────── */
 .dash-layout {
   display: flex;
-  height: 100vh;
+  height: 100vh;   /* fallback — JS overrides to visualViewport.height */
+  height: 100svh;  /* static safety net: small viewport never overflows browser chrome */
   overflow: hidden;
 }
 

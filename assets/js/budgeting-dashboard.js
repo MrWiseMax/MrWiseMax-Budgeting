@@ -123,6 +123,9 @@ document.addEventListener('click', () => {
 function setupDynamicLayout() {
   _applyLayout();
   window.addEventListener('resize', _applyLayout);
+  // visualViewport fires its own resize event (e.g. as Safari's address bar
+  // collapses) which may not trigger window.resize — listen to both.
+  window.visualViewport?.addEventListener('resize', _applyLayout);
   // orientationchange fires before the viewport settles; the 150 ms delay
   // lets the browser finish repainting before we measure.
   window.addEventListener('orientationchange', () => setTimeout(_applyLayout, 150));
@@ -132,16 +135,24 @@ function _applyLayout() {
   const mobileNav   = document.querySelector('.mobile-nav');
   const topbar      = document.querySelector('.topbar');
   const dashContent = document.querySelector('.dash-content');
+  const dashLayout  = document.querySelector('.dash-layout');
   if (!dashContent) return;
 
   // Use visualViewport when available — it stays accurate when the
   // on-screen keyboard or browser chrome resizes the visible area.
+  // On mobile browsers 100vh = the *large* viewport (chrome hidden), so
+  // .dash-layout ends up taller than what is actually visible and the
+  // bottom of dash-content disappears behind the browser toolbar.
+  // Pinning dash-layout to the real visual height fixes that.
   const vh       = window.visualViewport?.height ?? window.innerHeight;
   const isMobile = window.matchMedia('(max-width: 768px)').matches;
   const navH     = isMobile && mobileNav ? mobileNav.offsetHeight : 0;
   const topbarH  = topbar ? topbar.offsetHeight : 0;
   const availH   = Math.floor(vh - topbarH - navH);       // px available for sections
   const padH     = isMobile ? 14 : 24;                    // matches .dash-content padding
+
+  // -- Pin the layout container to the exact visible viewport height --
+  if (dashLayout) dashLayout.style.height = `${Math.floor(vh)}px`;
 
   // -- CSS variable (consumed by .chat-layout height calc and any other rule) --
   document.documentElement.style.setProperty('--available-vh', `${availH}px`);
