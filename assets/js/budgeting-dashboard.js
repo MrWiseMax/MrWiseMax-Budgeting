@@ -22,6 +22,44 @@ const App = {
   communitySearch: '',
 };
 
+// ── Currency Formatter ────────────────────────────────────────
+// Handles live comma-formatting for all dollar-amount inputs.
+// Inputs must have class="fmt-currency" and type="text".
+const Fmt = {
+  // Number/string → display string  e.g. 1234.5 → "1,234.50"
+  set(n) {
+    if (n == null || n === '' || isNaN(+n)) return '';
+    const [i, d] = String(+n).split('.');
+    return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d ? '.' + d.slice(0, 2).padEnd(2, '0') : '');
+  },
+  // Input string → float   e.g. "1,234.50" → 1234.5
+  get(s) { return parseFloat(String(s || '').replace(/,/g, '')) || 0; },
+  // Live-format a raw string while the user types
+  live(s) {
+    s = s.replace(/[^0-9.]/g, '');
+    const dot = s.indexOf('.');
+    if (dot !== -1) {
+      s = s.slice(0, dot + 1) + s.slice(dot + 1).replace(/\./g, '');
+      if (s.length > dot + 3) s = s.slice(0, dot + 3);   // max 2 decimal places
+    }
+    const [i, d] = s.split('.');
+    const fi = (i || '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return d !== undefined ? fi + '.' + d : fi;
+  },
+};
+
+function initCurrencyInputs() {
+  document.querySelectorAll('.fmt-currency').forEach(el => {
+    el.addEventListener('input', () => {
+      const start  = el.selectionStart;
+      const before = el.value.length;
+      el.value     = Fmt.live(el.value);
+      const delta  = el.value.length - before;
+      try { el.setSelectionRange(start + delta, start + delta); } catch (_) {}
+    });
+  });
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────
 async function initDashboard() {
   const user = await Auth.requireAuth();
@@ -43,6 +81,7 @@ async function initDashboard() {
   renderUserInfo(); // Re-render with full profile data (nickname + custom avatar)
   processRecurringTransactions(); // auto-post any pending monthly entries
 
+  initCurrencyInputs();
   navigateTo('overview');
   setupNavigation();
   setupFilterListeners();
@@ -505,7 +544,7 @@ function openEditTransaction(id) {
   App.editing.transaction = tx;
   document.getElementById('tx-modal-title').textContent = 'Edit Transaction';
   document.getElementById('tx-type').value        = tx.type;
-  document.getElementById('tx-amount').value      = tx.amount;
+  document.getElementById('tx-amount').value      = Fmt.set(tx.amount);
   document.getElementById('tx-description').value = tx.description || '';
   document.getElementById('tx-date').value        = UI.formatDateInput(tx.date);
   populateTxCategoryDropdown(tx.category);
@@ -524,7 +563,7 @@ function populateTxCategoryDropdown(selected) {
 
 async function saveTransaction() {
   const type        = document.getElementById('tx-type').value;
-  const amount      = parseFloat(document.getElementById('tx-amount').value);
+  const amount      = Fmt.get(document.getElementById('tx-amount').value);
   const category    = document.getElementById('tx-category').value;
   const description = document.getElementById('tx-description').value.trim();
   const date        = document.getElementById('tx-date').value;
@@ -609,8 +648,8 @@ function openEditGoal(id) {
   App.editing.goal = g;
   document.getElementById('goal-modal-title').textContent = 'Edit Goal';
   document.getElementById('goal-name').value    = g.name;
-  document.getElementById('goal-target').value  = g.target_amount;
-  document.getElementById('goal-current').value = g.current_amount;
+  document.getElementById('goal-target').value  = Fmt.set(g.target_amount);
+  document.getElementById('goal-current').value = Fmt.set(g.current_amount);
   document.getElementById('goal-deadline').value = g.deadline || '';
   document.getElementById('goal-color').value   = g.color || '#BB885F';
   UI.openModal('goal-modal');
@@ -625,7 +664,7 @@ function openContributeGoal(id) {
 }
 
 async function contributeToGoal() {
-  const amount = parseFloat(document.getElementById('contribute-amount').value);
+  const amount = Fmt.get(document.getElementById('contribute-amount').value);
   if (!amount || amount <= 0) { UI.toast('Enter a valid amount.', 'error'); return; }
   const g = App.editing.goal;
   const newAmount = Math.min(+g.current_amount + amount, +g.target_amount);
@@ -641,8 +680,8 @@ async function contributeToGoal() {
 
 async function saveGoal() {
   const name         = document.getElementById('goal-name').value.trim();
-  const target       = parseFloat(document.getElementById('goal-target').value);
-  const current      = parseFloat(document.getElementById('goal-current').value) || 0;
+  const target       = Fmt.get(document.getElementById('goal-target').value);
+  const current      = Fmt.get(document.getElementById('goal-current').value);
   const deadline     = document.getElementById('goal-deadline').value || null;
   const color        = document.getElementById('goal-color').value || '#BB885F';
   if (!name || !target) { UI.toast('Goal name and target amount are required.', 'error'); return; }
@@ -810,7 +849,7 @@ function openEditPlan(id) {
   document.getElementById('plan-modal-title').textContent = 'Edit Plan';
   document.getElementById('plan-name').value        = p.name;
   document.getElementById('plan-description').value = p.description || '';
-  document.getElementById('plan-income').value      = p.monthly_income || '';
+  document.getElementById('plan-income').value      = Fmt.set(p.monthly_income);
   renderAllocRows(Object.entries(p.allocations || {}).map(([name, v]) => ({ name, percentage: v.percentage, color: v.color })));
   UI.openModal('plan-modal');
 }
@@ -850,7 +889,7 @@ function getAllocationsFromForm() {
 async function savePlan() {
   const name           = document.getElementById('plan-name').value.trim();
   const description    = document.getElementById('plan-description').value.trim();
-  const monthly_income = parseFloat(document.getElementById('plan-income').value) || 0;
+  const monthly_income = Fmt.get(document.getElementById('plan-income').value);
   const allocations    = getAllocationsFromForm();
 
   if (!name) { UI.toast('Plan name is required.', 'error'); return; }
@@ -903,13 +942,13 @@ function renderSimulate() {
 }
 
 function runSimulation() {
-  const income       = parseFloat(document.getElementById('sim-income').value)      || 0;
-  const expenses     = parseFloat(document.getElementById('sim-expenses').value)    || 0;
+  const income       = Fmt.get(document.getElementById('sim-income').value);
+  const expenses     = Fmt.get(document.getElementById('sim-expenses').value);
   const savingsPct   = parseFloat(document.getElementById('sim-savings-pct').value) || 0;
   const investPct    = parseFloat(document.getElementById('sim-invest-pct').value)  || 0;
   const annualReturn = parseFloat(document.getElementById('sim-return').value)      || 7;
-  const debtPayment  = parseFloat(document.getElementById('sim-debt').value)        || 0;
-  const totalDebt    = parseFloat(document.getElementById('sim-total-debt').value)  || 0;
+  const debtPayment  = Fmt.get(document.getElementById('sim-debt').value);
+  const totalDebt    = Fmt.get(document.getElementById('sim-total-debt').value);
   const years        = parseInt(document.getElementById('sim-years').value)         || 5;
 
   if (!income) { UI.toast('Enter your monthly income to run a simulation.', 'error'); return; }
@@ -987,7 +1026,7 @@ function comparePlans() {
   const p2 = App.plans.find(p => p.id === id2);
   if (!p1 || !p2) return;
 
-  const income = parseFloat(document.getElementById('compare-income')?.value) || p1.monthly_income || p2.monthly_income || 3000;
+  const income = Fmt.get(document.getElementById('compare-income')?.value) || p1.monthly_income || p2.monthly_income || 3000;
   const years  = parseInt(document.getElementById('compare-years')?.value) || 5;
 
   const proj1 = projectPlanWealth(p1.allocations, income, years);
@@ -1609,7 +1648,7 @@ function openEditRecurring(id) {
   App.editing.recurring = r;
   document.getElementById('rec-modal-title').textContent = 'Edit Recurring Entry';
   document.getElementById('rec-type').value        = r.type;
-  document.getElementById('rec-amount').value      = r.amount;
+  document.getElementById('rec-amount').value      = Fmt.set(r.amount);
   document.getElementById('rec-description').value = r.description || '';
   document.getElementById('rec-day').value         = r.day_of_month;
   populateRecurringCategoryDropdown(r.type, r.category);
@@ -1626,7 +1665,7 @@ function populateRecurringCategoryDropdown(type, selected) {
 
 async function saveRecurring() {
   const type        = document.getElementById('rec-type').value;
-  const amount      = parseFloat(document.getElementById('rec-amount').value);
+  const amount      = Fmt.get(document.getElementById('rec-amount').value);
   const category    = document.getElementById('rec-category').value;
   const description = document.getElementById('rec-description').value.trim();
   const day         = parseInt(document.getElementById('rec-day').value) || 1;

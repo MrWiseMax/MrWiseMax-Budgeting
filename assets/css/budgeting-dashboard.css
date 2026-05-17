@@ -1041,7 +1041,66 @@ body {
   border: none;
 }
 
-/* Section divider rows */
+/* Sticky first column — metric label stays visible while scrolling horizontally */
+.compare-table thead tr th:first-child,
+.compare-table tbody tr:not(.compare-section-header) td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--bg-card);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.22);
+}
+
+/* Section header rows span all columns — keep them sticky to the left too */
+.compare-section-header td {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+/* Value columns: don't let plan names overflow on narrow screens */
+.compare-table th:not(:first-child) {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  /* Force horizontal scroll on the card (already has overflow-x:auto inline) */
+  .compare-table {
+    font-size: 0.76rem;
+    min-width: 480px;
+  }
+  .compare-table th,
+  .compare-table td {
+    padding: 7px 8px;
+  }
+  .compare-table thead tr th:first-child,
+  .compare-table tbody tr:not(.compare-section-header) td:first-child {
+    min-width: 110px;
+    max-width: 130px;
+    white-space: normal;
+    word-break: break-word;
+  }
+  .compare-table th:not(:first-child),
+  .compare-table td:not(:first-child) {
+    min-width: 82px;
+  }
+  .compare-section-header td {
+    padding: 6px 8px;
+    font-size: 0.68rem;
+    min-width: unset;
+  }
+  .compare-table .sub-row td:first-child {
+    padding-left: 16px;
+  }
+  .compare-amt {
+    font-size: 0.68rem;
+  }
+}
+
+/* Original Section divider rows */
 .compare-section-header td {
   background: rgba(187, 136, 95, 0.08);
   color: var(--primary);
