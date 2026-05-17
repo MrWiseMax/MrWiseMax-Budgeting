@@ -1173,12 +1173,16 @@ const Chat = (() => {
           sampleRate:       { ideal: 48000 },
           sampleSize:       { ideal: 16 },
           channelCount:     { ideal: 1 },
-          echoCancellation: { ideal: true },
-          noiseSuppression: { ideal: false },  // off — browser noise suppression degrades voice naturalness
-          autoGainControl:  { ideal: false },  // off — AGC causes volume pumping artifacts
-          latency:          { ideal: 0 },
+          // Use exact:false to *force* these off — ideal:false is advisory and browsers often ignore it.
+          // Noise suppression and AGC are the primary cause of consonants being swallowed/cut.
+          echoCancellation: { exact: false },
+          noiseSuppression: { exact: false },
+          autoGainControl:  { exact: false },
         },
-      });
+      }).catch(() =>
+        // Fallback: some browsers reject exact constraints on virtual/Bluetooth mics — retry without them
+        navigator.mediaDevices.getUserMedia({ audio: { sampleRate: { ideal: 48000 }, channelCount: { ideal: 1 } } })
+      );
     } catch {
       UI.toast('Microphone access denied.', 'error'); return;
     }
@@ -1211,7 +1215,7 @@ const Chat = (() => {
       await _uploadAudio(blob, mimeType);
     };
 
-    mediaRecorder.start(100);   // 100 ms chunks — finer granularity, smoother upload
+    mediaRecorder.start(250);   // 250 ms chunks — fewer seams, avoids glitches at frame boundaries
     _updateMicBtn(true);
 
     recordingTimer = setInterval(() => {
