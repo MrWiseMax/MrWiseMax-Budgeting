@@ -1016,121 +1016,59 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  table-layout: fixed;  /* 3 columns share width evenly — no horizontal scroll */
 }
 
 .compare-table th {
   background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
-  padding: 10px 14px;
+  padding: 10px 12px;
   text-align: left;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-
-.compare-table td {
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-
-.compare-table tr:last-child td {
-  border: none;
-}
-
-/* Sticky first column — metric label stays visible while scrolling horizontally */
-.compare-table thead tr th:first-child,
-.compare-table tbody tr:not(.compare-section-header) td:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: var(--bg-card);
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.22);
-}
-
-/* Section header rows span all columns — keep them sticky to the left too */
-.compare-section-header td {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-}
-
-/* Value columns: don't let plan names overflow on narrow screens */
-.compare-table th:not(:first-child) {
-  max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
-  /* Force horizontal scroll on the card (already has overflow-x:auto inline) */
-  .compare-table {
-    font-size: 0.76rem;
-    min-width: 480px;
-  }
-  .compare-table th,
-  .compare-table td {
-    padding: 7px 8px;
-  }
-  .compare-table thead tr th:first-child,
-  .compare-table tbody tr:not(.compare-section-header) td:first-child {
-    min-width: 110px;
-    max-width: 130px;
-    white-space: normal;
-    word-break: break-word;
-  }
-  .compare-table th:not(:first-child),
-  .compare-table td:not(:first-child) {
-    min-width: 82px;
-  }
-  .compare-section-header td {
-    padding: 6px 8px;
-    font-size: 0.68rem;
-    min-width: unset;
-  }
-  .compare-table .sub-row td:first-child {
-    padding-left: 16px;
-  }
-  .compare-amt {
-    font-size: 0.68rem;
-  }
+/* Label column is slightly wider than the two value columns */
+.compare-table th:first-child,
+.compare-table td:first-child  { width: 38%; }
+
+.compare-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Original Section divider rows */
-.compare-section-header td {
-  background: rgba(187, 136, 95, 0.08);
-  color: var(--primary);
-  font-weight: 700;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  padding: 8px 14px;
-  border-bottom: 1px solid rgba(187, 136, 95, 0.18);
-  border-top: 1px solid rgba(187, 136, 95, 0.18);
-}
+.compare-table tr:last-child td { border: none; }
 
-/* Sub-item rows (indented with arrow) */
-.compare-table .sub-row td:first-child {
-  padding-left: 26px;
+/* Metric label column — muted, normal weight */
+.compare-table td.compare-label {
   color: var(--text-muted);
+  font-weight: 400;
   font-size: 0.82rem;
+  white-space: normal;    /* allow label to wrap rather than truncate */
 }
 
-/* Small secondary currency amount */
-.compare-amt {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 1px;
+/* Winning value — highlighted green */
+.compare-table td.compare-win {
+  color: var(--success);
+  font-weight: 700;
 }
 
-/* N/A placeholder */
-.compare-na {
-  color: var(--text-dim);
+@media (max-width: 768px) {
+  .compare-table { font-size: 0.82rem; }
+  .compare-table th,
+  .compare-table td { padding: 9px 10px; }
+  .compare-table td.compare-label { font-size: 0.78rem; }
 }
 
 /* ── Community / Blueprints ──────────────────────────────── */

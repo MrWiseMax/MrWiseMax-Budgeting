@@ -1034,137 +1034,38 @@ function comparePlans() {
   const m1 = getPlanMetrics(p1, income);
   const m2 = getPlanMetrics(p2, income);
 
-  // higher value = better (green winner)
-  const winner    = (v1, v2, n1, n2) => `<span style="color:#4CAF50;font-weight:600">${v1 > v2 ? n1 : v2 > v1 ? n2 : 'Tie'}</span>`;
-  // lower value = better (e.g. expenses)
-  const winnerLow = (v1, v2, n1, n2) => `<span style="color:#4CAF50;font-weight:600">${v1 < v2 ? n1 : v2 < v1 ? n2 : 'Tie'}</span>`;
-  const NA = `<span class="compare-na">—</span>`;
-
-  // Section divider helper
-  const section = label => `<tr class="compare-section-header"><td colspan="4">${label}</td></tr>`;
-
-  // Allocation category row helper
-  const allocRow = (cat, isWealthCat) => {
-    const a1 = p1.allocations?.[cat], a2 = p2.allocations?.[cat];
-    const pct1 = +(a1?.percentage || 0), pct2 = +(a2?.percentage || 0);
-    const amt1 = income * pct1 / 100,   amt2 = income * pct2 / 100;
-    const cell = (pct, amt) => pct > 0
-      ? `${pct.toFixed(1)}%<span class="compare-amt">${UI.currency(amt)}</span>`
-      : `<span class="compare-na">—</span>`;
-    const w = (pct1 === 0 && pct2 === 0) ? NA
-            : isWealthCat ? winner(pct1, pct2, p1.name, p2.name)
-            : winnerLow(pct1, pct2, p1.name, p2.name);
-    return `<tr><td>${cat}</td><td>${cell(pct1,amt1)}</td><td>${cell(pct2,amt2)}</td><td>${w}</td></tr>`;
+  // Highlight the winning cell green; lower = better when isLow is true
+  const row = (label, v1, v2, f1, f2, isLow = false) => {
+    const win1 = isLow ? v1 < v2 : v1 > v2;
+    const win2 = isLow ? v2 < v1 : v2 > v1;
+    return `<tr>
+      <td class="compare-label">${label}</td>
+      <td${win1 ? ' class="compare-win"' : ''}>${f1}</td>
+      <td${win2 ? ' class="compare-win"' : ''}>${f2}</td>
+    </tr>`;
   };
 
-  // Gather & sort allocation categories from both plans
-  const allCats    = [...new Set([...Object.keys(p1.allocations||{}), ...Object.keys(p2.allocations||{})])].sort();
-  const wealthCats = allCats.filter(k => /saving|invest/i.test(k));
-  const expCats    = allCats.filter(k => !/saving|invest/i.test(k));
+  const s1 = proj1[years - 1], s2 = proj2[years - 1];
 
   const tableEl = document.getElementById('compare-table');
   if (tableEl) tableEl.innerHTML = `
     <table class="compare-table">
       <thead>
         <tr>
-          <th>Metric</th>
-          <th>${p1.name}</th>
-          <th>${p2.name}</th>
-          <th>Better</th>
+          <th></th>
+          <th title="${p1.name}">${p1.name}</th>
+          <th title="${p2.name}">${p2.name}</th>
         </tr>
       </thead>
       <tbody>
-
-        ${section('📋 Plan Overview')}
-        <tr><td>Monthly Income (Base)</td>
-            <td colspan="2" style="text-align:center;color:var(--text-muted)">${UI.currency(income)}</td>
-            <td>${NA}</td></tr>
-        <tr><td>Plan Status</td>
-            <td><span class="plan-status status-${p1.status}">${p1.status}</span></td>
-            <td><span class="plan-status status-${p2.status}">${p2.status}</span></td>
-            <td>${NA}</td></tr>
-        <tr><td>Budget Categories</td>
-            <td>${m1.numCategories}</td>
-            <td>${m2.numCategories}</td>
-            <td>${NA}</td></tr>
-        <tr><td>Total Allocated</td>
-            <td>${m1.totalAllocPct.toFixed(1)}%</td>
-            <td>${m2.totalAllocPct.toFixed(1)}%</td>
-            <td>${NA}</td></tr>
-
-        ${section('💰 Monthly Cashflow')}
-        <tr><td>Wealth-Building / Mo.</td>
-            <td><strong>${UI.currency(m1.wealth)}</strong></td>
-            <td><strong>${UI.currency(m2.wealth)}</strong></td>
-            <td>${winner(m1.wealth, m2.wealth, p1.name, p2.name)}</td></tr>
-        <tr class="sub-row"><td>→ Savings</td>
-            <td>${UI.currency(m1.savings)}</td>
-            <td>${UI.currency(m2.savings)}</td>
-            <td>${winner(m1.savings, m2.savings, p1.name, p2.name)}</td></tr>
-        <tr class="sub-row"><td>→ Investments</td>
-            <td>${UI.currency(m1.invest)}</td>
-            <td>${UI.currency(m2.invest)}</td>
-            <td>${winner(m1.invest, m2.invest, p1.name, p2.name)}</td></tr>
-        <tr><td>Monthly Expenses</td>
-            <td>${UI.currency(m1.expenses)}</td>
-            <td>${UI.currency(m2.expenses)}</td>
-            <td>${winnerLow(m1.expenses, m2.expenses, p1.name, p2.name)}</td></tr>
-        <tr><td>Unallocated Budget</td>
-            <td>${UI.currency(m1.unalloc)}</td>
-            <td>${UI.currency(m2.unalloc)}</td>
-            <td>${NA}</td></tr>
-
-        ${section('📊 Budget Rates')}
-        <tr><td>Wealth-Building Rate</td>
-            <td><strong>${m1.wealthPct.toFixed(1)}%</strong></td>
-            <td><strong>${m2.wealthPct.toFixed(1)}%</strong></td>
-            <td>${winner(m1.wealthPct, m2.wealthPct, p1.name, p2.name)}</td></tr>
-        <tr class="sub-row"><td>→ Savings Rate</td>
-            <td>${m1.savPct.toFixed(1)}%</td>
-            <td>${m2.savPct.toFixed(1)}%</td>
-            <td>${winner(m1.savPct, m2.savPct, p1.name, p2.name)}</td></tr>
-        <tr class="sub-row"><td>→ Investment Rate</td>
-            <td>${m1.invPct.toFixed(1)}%</td>
-            <td>${m2.invPct.toFixed(1)}%</td>
-            <td>${winner(m1.invPct, m2.invPct, p1.name, p2.name)}</td></tr>
-        <tr><td>Expense Rate</td>
-            <td>${m1.expPct.toFixed(1)}%</td>
-            <td>${m2.expPct.toFixed(1)}%</td>
-            <td>${winnerLow(m1.expPct, m2.expPct, p1.name, p2.name)}</td></tr>
-        <tr><td>Unallocated</td>
-            <td>${m1.unallocPct.toFixed(1)}%</td>
-            <td>${m2.unallocPct.toFixed(1)}%</td>
-            <td>${NA}</td></tr>
-
-        ${section('📈 Projected Wealth (7% annual return)')}
-        <tr><td>After 1 Year</td>
-            <td>${UI.currency(proj1[0]?.total)}</td>
-            <td>${UI.currency(proj2[0]?.total)}</td>
-            <td>${winner(proj1[0]?.total||0, proj2[0]?.total||0, p1.name, p2.name)}</td></tr>
-        ${years >= 3 ? `<tr><td>After 3 Years</td>
-            <td>${UI.currency(proj1[2]?.total)}</td>
-            <td>${UI.currency(proj2[2]?.total)}</td>
-            <td>${winner(proj1[2]?.total||0, proj2[2]?.total||0, p1.name, p2.name)}</td></tr>` : ''}
-        ${years >= 5 ? `<tr><td>After 5 Years</td>
-            <td>${UI.currency(proj1[4]?.total)}</td>
-            <td>${UI.currency(proj2[4]?.total)}</td>
-            <td>${winner(proj1[4]?.total||0, proj2[4]?.total||0, p1.name, p2.name)}</td></tr>` : ''}
-        ${years >= 10 ? `<tr><td>After 10 Years</td>
-            <td>${UI.currency(proj1[9]?.total)}</td>
-            <td>${UI.currency(proj2[9]?.total)}</td>
-            <td>${winner(proj1[9]?.total||0, proj2[9]?.total||0, p1.name, p2.name)}</td></tr>` : ''}
-        <tr><td>${years}-Year Investment Return</td>
-            <td>${UI.currency(proj1[years-1]?.invest)}</td>
-            <td>${UI.currency(proj2[years-1]?.invest)}</td>
-            <td>${winner(proj1[years-1]?.invest||0, proj2[years-1]?.invest||0, p1.name, p2.name)}</td></tr>
-        <tr><td>${years}-Year Total Accumulated</td>
-            <td><strong>${UI.currency(proj1[years-1]?.total)}</strong></td>
-            <td><strong>${UI.currency(proj2[years-1]?.total)}</strong></td>
-            <td>${winner(proj1[years-1]?.total||0, proj2[years-1]?.total||0, p1.name, p2.name)}</td></tr>
-
-        ${wealthCats.length ? section('🏦 Savings & Investment Categories') + wealthCats.map(c => allocRow(c, true)).join('') : ''}
-        ${expCats.length    ? section('🏷️ Expense Categories')             + expCats.map(c => allocRow(c, false)).join('') : ''}
-
+        ${row('Monthly Savings',           m1.savings,         m2.savings,         UI.currency(m1.savings),          UI.currency(m2.savings))}
+        ${row('Monthly Investment',        m1.invest,          m2.invest,          UI.currency(m1.invest),           UI.currency(m2.invest))}
+        ${row('Monthly Expenses',          m1.expenses,        m2.expenses,        UI.currency(m1.expenses),         UI.currency(m2.expenses),         true)}
+        ${row('Savings Rate',              m1.savPct,          m2.savPct,          m1.savPct.toFixed(1) + '%',       m2.savPct.toFixed(1) + '%')}
+        ${row('Investment Rate',           m1.invPct,          m2.invPct,          m1.invPct.toFixed(1) + '%',       m2.invPct.toFixed(1) + '%')}
+        ${row('Expense Rate',              m1.expPct,          m2.expPct,          m1.expPct.toFixed(1) + '%',       m2.expPct.toFixed(1) + '%',       true)}
+        ${row(`Savings in ${years}yr`,     s1?.savings || 0,   s2?.savings || 0,   UI.currency(s1?.savings),         UI.currency(s2?.savings))}
+        ${row(`Wealth in ${years}yr`,      s1?.total   || 0,   s2?.total   || 0,   UI.currency(s1?.total),           UI.currency(s2?.total))}
       </tbody>
     </table>`;
 
