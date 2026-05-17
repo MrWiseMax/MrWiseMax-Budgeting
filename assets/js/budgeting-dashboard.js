@@ -1735,30 +1735,63 @@ async function confirmCrop() {
   const DISMISSED_KEY = 'mrwisemax_pwa_dismissed';
   let _deferredPrompt = null;
 
+  const banner     = document.getElementById('pwa-install-banner');
+  const installBtn = document.getElementById('pwa-install-btn');
+  const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+  if (!banner) return;
+
+  // Already running as an installed PWA — never show the banner
+  const isStandalone = window.navigator.standalone === true ||
+                       window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone || sessionStorage.getItem(DISMISSED_KEY)) return;
+
+  function hideBanner() {
+    banner.style.display = 'none';
+    sessionStorage.setItem(DISMISSED_KEY, '1');
+  }
+
+  dismissBtn?.addEventListener('click', hideBanner);
+
+  window.addEventListener('appinstalled', () => {
+    banner.style.display = 'none';
+    _deferredPrompt = null;
+  });
+
+  // ── Safari (iOS & macOS) ──────────────────────────────────────
+  // Safari never fires beforeinstallprompt — detect it and show
+  // manual "Add to Home Screen" instructions instead.
+  const isIOS    = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = isIOS || /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  if (isSafari) {
+    const subtext = banner.querySelector('.pwa-banner-text span');
+    if (subtext) {
+      subtext.innerHTML = isIOS
+        ? 'Tap the <strong>Share &#x2191;</strong> button, then <strong>"Add to Home Screen"</strong>'
+        : 'In Safari: <strong>File</strong> &rarr; <strong>"Add to Dock&hellip;"</strong>';
+    }
+    if (installBtn) {
+      installBtn.textContent = 'Got it';
+      installBtn.addEventListener('click', hideBanner);
+    }
+    banner.style.display = 'flex';
+    return;
+  }
+
+  // ── Chrome / Android — wait for the native install prompt ─────
   window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     _deferredPrompt = e;
-    if (sessionStorage.getItem(DISMISSED_KEY)) return;
-    const banner = document.getElementById('pwa-install-banner');
-    if (banner) banner.style.display = 'flex';
+    banner.style.display = 'flex';
   });
 
-  document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+  installBtn?.addEventListener('click', async () => {
     if (!_deferredPrompt) return;
     _deferredPrompt.prompt();
     const { outcome } = await _deferredPrompt.userChoice;
     _deferredPrompt = null;
-    document.getElementById('pwa-install-banner').style.display = 'none';
+    banner.style.display = 'none';
     if (outcome === 'accepted') sessionStorage.setItem(DISMISSED_KEY, '1');
-  });
-
-  document.getElementById('pwa-dismiss-btn')?.addEventListener('click', () => {
-    document.getElementById('pwa-install-banner').style.display = 'none';
-    sessionStorage.setItem(DISMISSED_KEY, '1');
-  });
-
-  window.addEventListener('appinstalled', () => {
-    document.getElementById('pwa-install-banner').style.display = 'none';
-    _deferredPrompt = null;
   });
 })();
