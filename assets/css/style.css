@@ -153,6 +153,12 @@ img {
 .logo-icon {
   font-size: 1.4rem;
 }
+.logo-img {
+  height: 1.6rem;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
 
 .logo-text {
   background: linear-gradient(135deg, var(--primary), var(--primary-lt));

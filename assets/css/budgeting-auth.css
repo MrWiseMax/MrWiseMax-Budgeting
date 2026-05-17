@@ -39,6 +39,7 @@ body {
   font-size: 1.5rem; font-weight: 800; margin-bottom: 32px;
 }
 .auth-logo .logo-icon { font-size: 1.9rem; }
+.auth-logo .logo-img { height: 2.2rem; }
 .auth-logo .logo-text { background: linear-gradient(135deg, var(--primary), var(--primary-lt)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
 /* ── Headings ────────────────────────────────────────────── */

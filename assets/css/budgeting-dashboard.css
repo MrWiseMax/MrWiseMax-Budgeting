@@ -3274,6 +3274,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* -- PWA Install Banner --------------------------------------- */
+@property --pwa-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes pwaSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes pwaBorderSpin {
+  to { --pwa-angle: 360deg; }
+}
 #pwa-install-banner {
   position: fixed;
   bottom: 80px;
@@ -3283,22 +3295,44 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--bg-card);
-  border: 1.5px solid var(--border);
-  border-radius: 16px;
-  padding: 12px 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  background: conic-gradient(
+    from var(--pwa-angle),
+    var(--primary)     0%,
+    var(--bg-card)    18%,
+    var(--bg-card)    82%,
+    var(--primary)   100%
+  );
+  border: none;
+  border-radius: 18px;
+  padding: 14px 18px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
   max-width: 420px;
   width: calc(100vw - 32px);
-  animation: pwaSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  animation: pwaSlideUp 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards,
+             pwaBorderSpin 4s linear infinite;
 }
-@keyframes pwaSlideUp {
-  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+#pwa-install-banner::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  z-index: 0;
+}
+#pwa-install-banner > * {
+  position: relative;
+  z-index: 1;
 }
 .pwa-banner-icon {
-  font-size: 1.6rem;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.pwa-banner-icon img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 .pwa-banner-text {
   flex: 1;
@@ -3317,7 +3351,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .pwa-banner-install {
   flex-shrink: 0;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -3333,14 +3367,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 0.9rem;
   cursor: pointer;
-  padding: 4px 6px;
-  line-height: 1;
+  padding: 6px;
+  line-height: 0;
   border-radius: 6px;
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.pwa-banner-close:hover { color: var(--text); }
+.pwa-banner-close:hover { color: var(--text); background: rgba(255,255,255,0.07); }
 @media (max-width: 600px) {
   #pwa-install-banner { bottom: 72px; }
 }
