@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,920 +14,982 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
+
 <body>
 
-<!-- Page Loader -->
-<div id="page-loader">
-  <div class="loader-logo">💡 MrWiseMax</div>
-  <div class="loader-ring"></div>
-</div>
+  <!-- Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">💡 MrWiseMax</div>
+    <div class="loader-ring"></div>
+  </div>
 
-<!-- ── Dashboard Layout ─────────────────────────────────────── -->
-<div class="dash-layout">
+  <!-- ── Dashboard Layout ─────────────────────────────────────── -->
+  <div class="dash-layout">
 
-  <!-- Sidebar (desktop) -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <span style="font-size:1.3rem">💡</span>
-      <span class="logo-text">MrWiseMax</span>
-    </div>
-
-    <div class="sidebar-user">
-      <div class="user-avatar"></div>
-      <div class="user-info">
-        <span class="user-name-display">Loading…</span>
-        <span class="user-username-display" style="font-size:0.75rem;color:var(--text-dim)"></span>
+    <!-- Sidebar (desktop) -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span style="font-size:1.3rem">💡</span>
+        <span class="logo-text">MrWiseMax</span>
       </div>
-    </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section-label">Finance</div>
-      <button class="nav-item active" data-nav="overview"><span class="nav-icon">📊</span> Overview</button>
-      <button class="nav-item" data-nav="vault"><span class="nav-icon">🏦</span> Budget Vault</button>
-      <button class="nav-item" data-nav="plans"><span class="nav-icon">📋</span> Budget Plans</button>
-      <button class="nav-item" data-nav="simulate"><span class="nav-icon">🔮</span> Simulations</button>
-      <button class="nav-item" data-nav="compare"><span class="nav-icon">⚖️</span> Plan Comparison</button>
-
-      <div class="nav-section-label" style="margin-top:8px">Community</div>
-      <button class="nav-item" data-nav="community"><span class="nav-icon">🌐</span> Community Feed</button>
-      <button class="nav-item" data-nav="saved"><span class="nav-icon">🔖</span> Saved Blueprints</button>
-      <button class="nav-item" data-nav="messages"><span class="nav-icon">💬</span> Messages</button>
-
-      <div class="nav-section-label" style="margin-top:8px">Learn</div>
-      <button class="nav-item" data-nav="education"><span class="nav-icon">🎓</span> Education</button>
-    </nav>
-
-    <div class="sidebar-bottom">
-      <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span> Profile</button>
-      <button class="nav-item" id="signout-btn"><span class="nav-icon">🚪</span> Sign Out</button>
-    </div>
-  </aside>
-
-  <!-- Main -->
-  <div class="dash-main">
-    <!-- Topbar -->
-    <header class="topbar">
-      <div class="user-avatar" style="cursor:pointer" data-nav="profile" onclick="navigateTo('profile')" title="Profile"></div>
-      <div class="topbar-actions">
-        <button class="topbar-messages-btn" data-nav="messages" onclick="navigateTo('messages')" title="Messages">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
+      <div class="sidebar-user">
+        <div class="user-avatar"></div>
+        <div class="user-info">
+          <span class="user-name-display">Loading…</span>
+          <span class="user-username-display" style="font-size:0.75rem;color:var(--text-dim)"></span>
+        </div>
       </div>
-    </header>
 
-    <!-- Content -->
-    <main class="dash-content">
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Finance</div>
+        <button class="nav-item active" data-nav="overview"><span class="nav-icon">📊</span> Overview</button>
+        <button class="nav-item" data-nav="vault"><span class="nav-icon">🏦</span> Budget Vault</button>
+        <button class="nav-item" data-nav="plans"><span class="nav-icon">📋</span> Budget Plans</button>
+        <button class="nav-item" data-nav="simulate"><span class="nav-icon">🔮</span> Simulations</button>
+        <button class="nav-item" data-nav="compare"><span class="nav-icon">⚖️</span> Plan Comparison</button>
 
-      <!-- ═══════════════════════════════════════
+        <div class="nav-section-label" style="margin-top:8px">Community</div>
+        <button class="nav-item" data-nav="community"><span class="nav-icon">🌐</span> Community Feed</button>
+        <button class="nav-item" data-nav="saved"><span class="nav-icon">🔖</span> Saved Blueprints</button>
+        <button class="nav-item" data-nav="messages"><span class="nav-icon">💬</span> Messages</button>
+
+        <div class="nav-section-label" style="margin-top:8px">Learn</div>
+        <button class="nav-item" data-nav="education"><span class="nav-icon">🎓</span> Education</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <button class="nav-item" data-nav="profile"><span class="nav-icon">👤</span> Profile</button>
+        <button class="nav-item" id="signout-btn"><span class="nav-icon">🚪</span> Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="dash-main">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="user-avatar" style="cursor:pointer" data-nav="profile" onclick="navigateTo('profile')"
+          title="Profile"></div>
+        <div class="topbar-actions">
+          <button class="topbar-messages-btn" data-nav="messages" onclick="navigateTo('messages')" title="Messages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content -->
+      <main class="dash-content">
+
+        <!-- ═══════════════════════════════════════
            SECTION: OVERVIEW
       ═══════════════════════════════════════ -->
-      <section class="dash-section active" id="section-overview">
-        <h1 class="section-title">Financial Overview</h1>
-        <p class="section-subtitle">Your financial snapshot for this month.</p>
+        <section class="dash-section active" id="section-overview">
+          <h1 class="section-title">Financial Overview</h1>
+          <p class="section-subtitle">Your financial snapshot for this month.</p>
 
-        <!-- Stats -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-card-label">Monthly Income</div>
-            <div class="stat-card-value income" id="stat-income">$0.00</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">Monthly Expenses</div>
-            <div class="stat-card-value expense" id="stat-expenses">$0.00</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">Net Savings</div>
-            <div class="stat-card-value savings" id="stat-savings">$0.00</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">Burn Rate</div>
-            <div class="stat-card-value burn" id="stat-burn">0%</div>
-          </div>
-        </div>
-
-        <!-- Charts + Health Score -->
-        <div class="charts-grid">
-          <div class="chart-card">
-            <div class="chart-card-title">Expense Breakdown</div>
-            <div class="chart-container">
-              <canvas id="expense-pie-chart"></canvas>
+          <!-- Stats -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-card-label">Monthly Income</div>
+              <div class="stat-card-value income" id="stat-income">$0.00</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Monthly Expenses</div>
+              <div class="stat-card-value expense" id="stat-expenses">$0.00</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Net Savings</div>
+              <div class="stat-card-value savings" id="stat-savings">$0.00</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card-label">Burn Rate</div>
+              <div class="stat-card-value burn" id="stat-burn">0%</div>
             </div>
           </div>
-          <div class="chart-card">
-            <div class="chart-card-title">6-Month Income vs Expenses</div>
-            <div class="chart-container">
-              <canvas id="trend-chart"></canvas>
+
+          <!-- Charts + Health Score -->
+          <div class="charts-grid">
+            <div class="chart-card">
+              <div class="chart-card-title">Expense Breakdown</div>
+              <div class="chart-container">
+                <canvas id="expense-pie-chart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">6-Month Income vs Expenses</div>
+              <div class="chart-container">
+                <canvas id="trend-chart"></canvas>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Health Score + Recent Transactions -->
-        <div class="two-col">
+          <!-- Health Score + Recent Transactions -->
+          <div class="two-col">
+            <div class="card">
+              <div class="card-title">Financial Health Score</div>
+              <div id="health-score"></div>
+              <ul id="health-tips"></ul>
+            </div>
+            <div class="card">
+              <div class="card-title">Recent Transactions</div>
+              <div id="recent-transactions"></div>
+            </div>
+          </div>
+
+          <!-- Goals -->
           <div class="card">
-            <div class="card-title">Financial Health Score</div>
-            <div id="health-score"></div>
-            <ul id="health-tips"></ul>
+            <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+              Savings Goals Progress
+              <button class="btn btn-sm btn-primary" onclick="navigateTo('vault')">Manage Goals</button>
+            </div>
+            <div id="goals-overview" style="margin-top:12px"></div>
           </div>
-          <div class="card">
-            <div class="card-title">Recent Transactions</div>
-            <div id="recent-transactions"></div>
-          </div>
-        </div>
+        </section>
 
-        <!-- Goals -->
-        <div class="card">
-          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
-            Savings Goals Progress
-            <button class="btn btn-sm btn-primary" onclick="navigateTo('vault')">Manage Goals</button>
-          </div>
-          <div id="goals-overview" style="margin-top:12px"></div>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: VAULT
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-vault">
-        <h1 class="section-title">Budget Vault</h1>
-        <p class="section-subtitle">Your private financial transactions and savings goals.</p>
+        <section class="dash-section" id="section-vault">
+          <h1 class="section-title">Budget Vault</h1>
+          <p class="section-subtitle">Your private financial transactions and savings goals.</p>
 
-        <!-- Transactions -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="vault-header">
-            <div class="card-title" style="margin:0">Transactions</div>
-            <button class="btn btn-primary btn-sm" onclick="openAddTransaction()">+ Add Transaction</button>
-          </div>
-          <!-- Filters -->
-          <div class="filters-row">
-            <select class="filter-select" id="filter-type">
-              <option value="">All Types</option>
-              <option value="income">Income</option>
-              <option value="expense">Expense</option>
-            </select>
-            <select class="filter-select" id="filter-month">
-              <option value="">All Months</option>
-              <option value="0">January</option><option value="1">February</option>
-              <option value="2">March</option><option value="3">April</option>
-              <option value="4">May</option><option value="5">June</option>
-              <option value="6">July</option><option value="7">August</option>
-              <option value="8">September</option><option value="9">October</option>
-              <option value="10">November</option><option value="11">December</option>
-            </select>
-            <select class="filter-select" id="filter-year"><option value="">All Years</option></select>
-            <select class="filter-select" id="filter-category"><option value="">All Categories</option></select>
-          </div>
-          <div id="transaction-list"></div>
-        </div>
-
-        <!-- Recurring Income & Expenses -->
-        <div class="card" style="margin-bottom:20px">
-          <div class="vault-header">
-            <div>
-              <div class="card-title" style="margin:0">Recurring Transactions</div>
-              <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Monthly salary, rent, subscriptions — posted automatically each month</div>
+          <!-- Transactions -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="vault-header">
+              <div class="card-title" style="margin:0">Transactions</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddTransaction()">+ Add Transaction</button>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openAddRecurring()">+ Add Recurring</button>
+            <!-- Filters -->
+            <div class="filters-row">
+              <select class="filter-select" id="filter-type">
+                <option value="">All Types</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+              <select class="filter-select" id="filter-month">
+                <option value="">All Months</option>
+                <option value="0">January</option>
+                <option value="1">February</option>
+                <option value="2">March</option>
+                <option value="3">April</option>
+                <option value="4">May</option>
+                <option value="5">June</option>
+                <option value="6">July</option>
+                <option value="7">August</option>
+                <option value="8">September</option>
+                <option value="9">October</option>
+                <option value="10">November</option>
+                <option value="11">December</option>
+              </select>
+              <select class="filter-select" id="filter-year">
+                <option value="">All Years</option>
+              </select>
+              <select class="filter-select" id="filter-category">
+                <option value="">All Categories</option>
+              </select>
+            </div>
+            <div id="transaction-list"></div>
           </div>
-          <div id="recurring-list" style="margin-top:14px"></div>
-        </div>
 
-        <!-- Goals -->
-        <div class="card">
-          <div class="vault-header">
-            <div class="card-title" style="margin:0">Savings Goals</div>
-            <button class="btn btn-primary btn-sm" onclick="openAddGoal()">+ Create Goal</button>
+          <!-- Recurring Income & Expenses -->
+          <div class="card" style="margin-bottom:20px">
+            <div class="vault-header">
+              <div>
+                <div class="card-title" style="margin:0">Recurring Transactions</div>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:2px">Monthly salary, rent,
+                  subscriptions — posted automatically each month</div>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openAddRecurring()">+ Add Recurring</button>
+            </div>
+            <div id="recurring-list" style="margin-top:14px"></div>
           </div>
-          <div class="goals-grid" id="goals-list" style="margin-top:12px"></div>
-        </div>
-      </section>
 
-      <!-- ═══════════════════════════════════════
+          <!-- Goals -->
+          <div class="card">
+            <div class="vault-header">
+              <div class="card-title" style="margin:0">Savings Goals</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddGoal()">+ Create Goal</button>
+            </div>
+            <div class="goals-grid" id="goals-list" style="margin-top:12px"></div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════
            SECTION: PLANS
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-plans">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-          <div>
-            <h1 class="section-title">Budget Plans</h1>
-            <p class="section-subtitle">Create, manage, and compare your budgeting strategies.</p>
+        <section class="dash-section" id="section-plans">
+          <div
+            style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+            <div>
+              <h1 class="section-title">Budget Plans</h1>
+              <p class="section-subtitle">Create, manage, and compare your budgeting strategies.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openAddPlan()">+ Create Plan</button>
           </div>
-          <button class="btn btn-primary" onclick="openAddPlan()">+ Create Plan</button>
-        </div>
-        <div class="plans-grid" id="plans-grid"></div>
-        <div id="community-templates-section" style="margin-top:32px"></div>
-      </section>
+          <div class="plans-grid" id="plans-grid"></div>
+          <div id="community-templates-section" style="margin-top:32px"></div>
+        </section>
 
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: SIMULATE
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-simulate">
-        <h1 class="section-title">Financial Simulations</h1>
-        <p class="section-subtitle">Project your financial future based on your current strategy.</p>
+        <section class="dash-section" id="section-simulate">
+          <h1 class="section-title">Financial Simulations</h1>
+          <p class="section-subtitle">Project your financial future based on your current strategy.</p>
 
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-title">Simulation Parameters</div>
-          <div class="sim-form">
-            <div class="form-group">
-              <label class="label">Monthly Income ($)</label>
-              <input type="number" class="input" id="sim-income" placeholder="e.g. 4000" min="0">
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-title">Simulation Parameters</div>
+            <div class="sim-form">
+              <div class="form-group">
+                <label class="label">Monthly Income ($)</label>
+                <input type="number" class="input" id="sim-income" placeholder="e.g. 4000" min="0">
+              </div>
+              <div class="form-group">
+                <label class="label">Monthly Expenses ($)</label>
+                <input type="number" class="input" id="sim-expenses" placeholder="e.g. 2500" min="0">
+              </div>
+              <div class="form-group">
+                <label class="label">Savings Rate (%)</label>
+                <input type="number" class="input" id="sim-savings-pct" placeholder="e.g. 20" min="0" max="100">
+              </div>
+              <div class="form-group">
+                <label class="label">Investment Rate (%)</label>
+                <input type="number" class="input" id="sim-invest-pct" placeholder="e.g. 10" min="0" max="100">
+              </div>
+              <div class="form-group">
+                <label class="label">Annual Return Rate (%)</label>
+                <input type="number" class="input" id="sim-return" placeholder="e.g. 7" min="0" max="50" value="7">
+              </div>
+              <div class="form-group">
+                <label class="label">Monthly Debt Payment ($)</label>
+                <input type="number" class="input" id="sim-debt" placeholder="e.g. 300" min="0">
+              </div>
+              <div class="form-group">
+                <label class="label">Total Debt Balance ($)</label>
+                <input type="number" class="input" id="sim-total-debt" placeholder="e.g. 15000" min="0">
+              </div>
+              <div class="form-group">
+                <label class="label">Time Horizon (Years)</label>
+                <select class="input" id="sim-years">
+                  <option value="1">1 Year</option>
+                  <option value="3">3 Years</option>
+                  <option value="5" selected>5 Years</option>
+                  <option value="10">10 Years</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="label">Monthly Expenses ($)</label>
-              <input type="number" class="input" id="sim-expenses" placeholder="e.g. 2500" min="0">
+            <button class="btn btn-primary" onclick="runSimulation()">🔮 Run Simulation</button>
+          </div>
+
+          <!-- Results -->
+          <div id="sim-results" class="hidden">
+            <div class="sim-results-grid">
+              <div class="sim-result-card">
+                <div class="sim-result-label">Total Savings</div>
+                <div class="sim-result-value" id="sim-total-savings">—</div>
+              </div>
+              <div class="sim-result-card">
+                <div class="sim-result-label">Investment Value</div>
+                <div class="sim-result-value" id="sim-total-invest">—</div>
+              </div>
+              <div class="sim-result-card">
+                <div class="sim-result-label">Net Worth</div>
+                <div class="sim-result-value" id="sim-net-worth">—</div>
+              </div>
+              <div class="sim-result-card">
+                <div class="sim-result-label">Remaining Debt</div>
+                <div class="sim-result-value" id="sim-final-debt">—</div>
+              </div>
+              <div class="sim-result-card">
+                <div class="sim-result-label">Risk Score</div>
+                <div class="sim-result-value" id="sim-risk-score">—</div>
+              </div>
+              <div class="sim-result-card">
+                <div class="sim-result-label">Assessment</div>
+                <div class="sim-result-value" id="sim-risk-label" style="font-size:0.95rem">—</div>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="label">Savings Rate (%)</label>
-              <input type="number" class="input" id="sim-savings-pct" placeholder="e.g. 20" min="0" max="100">
-            </div>
-            <div class="form-group">
-              <label class="label">Investment Rate (%)</label>
-              <input type="number" class="input" id="sim-invest-pct" placeholder="e.g. 10" min="0" max="100">
-            </div>
-            <div class="form-group">
-              <label class="label">Annual Return Rate (%)</label>
-              <input type="number" class="input" id="sim-return" placeholder="e.g. 7" min="0" max="50" value="7">
-            </div>
-            <div class="form-group">
-              <label class="label">Monthly Debt Payment ($)</label>
-              <input type="number" class="input" id="sim-debt" placeholder="e.g. 300" min="0">
-            </div>
-            <div class="form-group">
-              <label class="label">Total Debt Balance ($)</label>
-              <input type="number" class="input" id="sim-total-debt" placeholder="e.g. 15000" min="0">
-            </div>
-            <div class="form-group">
-              <label class="label">Time Horizon (Years)</label>
-              <select class="input" id="sim-years">
-                <option value="1">1 Year</option>
-                <option value="3">3 Years</option>
-                <option value="5" selected>5 Years</option>
-                <option value="10">10 Years</option>
-              </select>
+            <div class="chart-card">
+              <div class="chart-card-title">Wealth Projection Over Time</div>
+              <div class="chart-container" style="height:300px">
+                <canvas id="sim-chart"></canvas>
+              </div>
             </div>
           </div>
-          <button class="btn btn-primary" onclick="runSimulation()">🔮 Run Simulation</button>
-        </div>
+        </section>
 
-        <!-- Results -->
-        <div id="sim-results" class="hidden">
-          <div class="sim-results-grid">
-            <div class="sim-result-card"><div class="sim-result-label">Total Savings</div><div class="sim-result-value" id="sim-total-savings">—</div></div>
-            <div class="sim-result-card"><div class="sim-result-label">Investment Value</div><div class="sim-result-value" id="sim-total-invest">—</div></div>
-            <div class="sim-result-card"><div class="sim-result-label">Net Worth</div><div class="sim-result-value" id="sim-net-worth">—</div></div>
-            <div class="sim-result-card"><div class="sim-result-label">Remaining Debt</div><div class="sim-result-value" id="sim-final-debt">—</div></div>
-            <div class="sim-result-card"><div class="sim-result-label">Risk Score</div><div class="sim-result-value" id="sim-risk-score">—</div></div>
-            <div class="sim-result-card"><div class="sim-result-label">Assessment</div><div class="sim-result-value" id="sim-risk-label" style="font-size:0.95rem">—</div></div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-card-title">Wealth Projection Over Time</div>
-            <div class="chart-container" style="height:300px">
-              <canvas id="sim-chart"></canvas>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: COMPARE
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-compare">
-        <h1 class="section-title">Plan Comparison</h1>
-        <p class="section-subtitle">Compare two budget plans side-by-side to find the winning strategy.</p>
+        <section class="dash-section" id="section-compare">
+          <h1 class="section-title">Plan Comparison</h1>
+          <p class="section-subtitle">Compare two budget plans side-by-side to find the winning strategy.</p>
 
-        <div class="card" style="margin-bottom:20px">
-          <div class="card-title">Select Plans to Compare</div>
-          <div class="compare-selectors">
-            <div class="form-group" style="margin:0">
-              <label class="label">Plan 1</label>
-              <select class="input" id="compare-plan-1"></select>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-title">Select Plans to Compare</div>
+            <div class="compare-selectors">
+              <div class="form-group" style="margin:0">
+                <label class="label">Plan 1</label>
+                <select class="input" id="compare-plan-1"></select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="label">Plan 2</label>
+                <select class="input" id="compare-plan-2"></select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="label">&#8203;</label>
+                <button class="btn btn-primary" onclick="comparePlans()">Compare →</button>
+              </div>
             </div>
-            <div class="form-group" style="margin:0">
-              <label class="label">Plan 2</label>
-              <select class="input" id="compare-plan-2"></select>
-            </div>
-            <div class="form-group" style="margin:0">
-              <label class="label">&#8203;</label>
-              <button class="btn btn-primary" onclick="comparePlans()">Compare →</button>
+            <div class="input-row" style="margin-top:14px">
+              <div class="form-group" style="margin:0">
+                <label class="label">Monthly Income ($)</label>
+                <input type="number" class="input" id="compare-income" placeholder="e.g. 4000">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="label">Compare Over (Years)</label>
+                <select class="input" id="compare-years">
+                  <option value="1">1 Year</option>
+                  <option value="3">3 Years</option>
+                  <option value="5" selected>5 Years</option>
+                  <option value="10">10 Years</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div class="input-row" style="margin-top:14px">
-            <div class="form-group" style="margin:0">
-              <label class="label">Monthly Income ($)</label>
-              <input type="number" class="input" id="compare-income" placeholder="e.g. 4000">
-            </div>
-            <div class="form-group" style="margin:0">
-              <label class="label">Compare Over (Years)</label>
-              <select class="input" id="compare-years">
-                <option value="1">1 Year</option>
-                <option value="3">3 Years</option>
-                <option value="5" selected>5 Years</option>
-                <option value="10">10 Years</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
-        <div id="compare-results" class="hidden">
-          <div class="card" style="margin-bottom:20px;overflow-x:auto">
-            <div class="card-title">Comparison Results</div>
-            <div id="compare-table" style="margin-top:12px"></div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-card-title">Projected Wealth Comparison</div>
-            <div class="chart-container" style="height:300px">
-              <canvas id="compare-chart"></canvas>
+          <div id="compare-results" class="hidden">
+            <div class="card" style="margin-bottom:20px;overflow-x:auto">
+              <div class="card-title">Comparison Results</div>
+              <div id="compare-table" style="margin-top:12px"></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">Projected Wealth Comparison</div>
+              <div class="chart-container" style="height:300px">
+                <canvas id="compare-chart"></canvas>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: COMMUNITY
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-community">
-        <div class="community-header">
-          <div>
-            <h1 class="section-title">Community Feed</h1>
-            <p class="section-subtitle">Explore budgeting blueprints and connect with others.</p>
+        <section class="dash-section" id="section-community">
+          <div class="community-header">
+            <div>
+              <h1 class="section-title">Community Feed</h1>
+              <p class="section-subtitle">Explore budgeting blueprints and connect with others.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openShareBlueprint()">+ Share Blueprint</button>
           </div>
-          <button class="btn btn-primary" onclick="openShareBlueprint()">+ Share Blueprint</button>
-        </div>
 
-        <!-- Search bar -->
-        <div class="community-search-wrap">
-          <div class="community-search-box">
-            <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <input type="text" id="community-search-input" class="community-search-input"
-                   placeholder="Search blueprints, strategies, or @usernames…" autocomplete="off">
+          <!-- Search bar -->
+          <div class="community-search-wrap">
+            <div class="community-search-box">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" />
+                <path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+              <input type="text" id="community-search-input" class="community-search-input"
+                placeholder="Search blueprints, strategies, or @usernames…" autocomplete="off">
+            </div>
           </div>
-        </div>
 
-        <!-- User search results (appears when searching) -->
-        <div id="user-search-results"></div>
+          <!-- User search results (appears when searching) -->
+          <div id="user-search-results"></div>
 
-        <div class="blueprint-feed" id="blueprint-feed">
-          <div class="loading-state">Loading community blueprints…</div>
-        </div>
-      </section>
+          <div class="blueprint-feed" id="blueprint-feed">
+            <div class="loading-state">Loading community blueprints…</div>
+          </div>
+        </section>
 
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: SAVED
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-saved">
-        <h1 class="section-title">Saved Blueprints</h1>
-        <p class="section-subtitle">Budgeting strategies you've bookmarked for reference.</p>
-        <div class="blueprint-feed" id="saved-blueprints-grid"></div>
-      </section>
+        <section class="dash-section" id="section-saved">
+          <h1 class="section-title">Saved Blueprints</h1>
+          <p class="section-subtitle">Budgeting strategies you've bookmarked for reference.</p>
+          <div class="blueprint-feed" id="saved-blueprints-grid"></div>
+        </section>
 
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: EDUCATION
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-education">
-        <h1 class="section-title">Financial Education</h1>
-        <p class="section-subtitle">Tips, concepts, and resources to sharpen your financial knowledge.</p>
+        <section class="dash-section" id="section-education">
+          <h1 class="section-title">Financial Education</h1>
+          <p class="section-subtitle">Tips, concepts, and resources to sharpen your financial knowledge.</p>
 
-        <div class="edu-grid">
-          <div class="edu-card">
-            <div class="edu-icon">📐</div>
-            <h3>The 50/30/20 Rule</h3>
-            <p>Allocate 50% of income to needs, 30% to wants, and 20% to savings and debt. A simple, powerful framework that works for most income levels.</p>
+          <div class="edu-grid">
+            <div class="edu-card">
+              <div class="edu-icon">📐</div>
+              <h3>The 50/30/20 Rule</h3>
+              <p>Allocate 50% of income to needs, 30% to wants, and 20% to savings and debt. A simple, powerful
+                framework that works for most income levels.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">🔥</div>
+              <h3>The FIRE Movement</h3>
+              <p>Financial Independence, Retire Early. Save and invest 40-70% of income aggressively to reach financial
+                independence as soon as possible.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">🛡️</div>
+              <h3>Emergency Fund First</h3>
+              <p>Before investing, build 3-6 months of living expenses as a cash emergency fund. This protects you from
+                needing to sell investments at a loss.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">📈</div>
+              <h3>Compound Interest</h3>
+              <p>Investing $200/month at 7% annual return becomes ~$240,000 in 30 years. Start early — time is the most
+                powerful financial tool available.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">💳</div>
+              <h3>Debt Avalanche Method</h3>
+              <p>Pay minimum on all debts, then throw every extra dollar at the highest-interest debt first.
+                Mathematically the fastest and cheapest way to become debt-free.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">🎯</div>
+              <h3>Pay Yourself First</h3>
+              <p>Automate your savings the moment your paycheck arrives. Treat savings like a non-negotiable bill.
+                What's left is yours to spend freely.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">🏠</div>
+              <h3>Housing Rule of Thumb</h3>
+              <p>Keep housing costs (rent or mortgage) under 30% of your gross income. Above 30% limits your ability to
+                save, invest, and build wealth.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">📊</div>
+              <h3>Net Worth Tracking</h3>
+              <p>Net worth = Assets − Liabilities. Track it monthly. Growing net worth means you're making progress —
+                regardless of your income level.</p>
+            </div>
+            <div class="edu-card">
+              <div class="edu-icon">🌍</div>
+              <h3>Diversification</h3>
+              <p>Never put all savings into one asset, company, or account. Spread investments across different types to
+                reduce risk without sacrificing returns.</p>
+            </div>
           </div>
-          <div class="edu-card">
-            <div class="edu-icon">🔥</div>
-            <h3>The FIRE Movement</h3>
-            <p>Financial Independence, Retire Early. Save and invest 40-70% of income aggressively to reach financial independence as soon as possible.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">🛡️</div>
-            <h3>Emergency Fund First</h3>
-            <p>Before investing, build 3-6 months of living expenses as a cash emergency fund. This protects you from needing to sell investments at a loss.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">📈</div>
-            <h3>Compound Interest</h3>
-            <p>Investing $200/month at 7% annual return becomes ~$240,000 in 30 years. Start early — time is the most powerful financial tool available.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">💳</div>
-            <h3>Debt Avalanche Method</h3>
-            <p>Pay minimum on all debts, then throw every extra dollar at the highest-interest debt first. Mathematically the fastest and cheapest way to become debt-free.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">🎯</div>
-            <h3>Pay Yourself First</h3>
-            <p>Automate your savings the moment your paycheck arrives. Treat savings like a non-negotiable bill. What's left is yours to spend freely.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">🏠</div>
-            <h3>Housing Rule of Thumb</h3>
-            <p>Keep housing costs (rent or mortgage) under 30% of your gross income. Above 30% limits your ability to save, invest, and build wealth.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">📊</div>
-            <h3>Net Worth Tracking</h3>
-            <p>Net worth = Assets − Liabilities. Track it monthly. Growing net worth means you're making progress — regardless of your income level.</p>
-          </div>
-          <div class="edu-card">
-            <div class="edu-icon">🌍</div>
-            <h3>Diversification</h3>
-            <p>Never put all savings into one asset, company, or account. Spread investments across different types to reduce risk without sacrificing returns.</p>
-          </div>
-        </div>
 
-        <!-- YouTube -->
-        <div class="yt-embed">
-          <div class="yt-icon">▶</div>
-          <p>Get deeper financial strategy content on our YouTube channel</p>
-          <!-- Replace href with your real YouTube channel URL -->
-          <a href="https://youtube.com" target="_blank" rel="noopener" class="btn btn-primary">
-            Watch MrWiseMax on YouTube
-          </a>
-        </div>
-      </section>
+          <!-- YouTube -->
+          <div class="yt-embed">
+            <div class="yt-icon">▶</div>
+            <p>Get deeper financial strategy content on our YouTube channel</p>
+            <!-- Replace href with your real YouTube channel URL -->
+            <a href="https://youtube.com" target="_blank" rel="noopener" class="btn btn-primary">
+              Watch MrWiseMax on YouTube
+            </a>
+          </div>
+        </section>
 
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: PROFILE
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-profile">
-        <h1 class="section-title">Your Profile</h1>
-        <p class="section-subtitle">Manage your account and public presence.</p>
+        <section class="dash-section" id="section-profile">
+          <h1 class="section-title">Your Profile</h1>
+          <p class="section-subtitle">Manage your account and public presence.</p>
 
-        <div class="profile-layout">
-          <!-- Left: Avatar + Stats -->
-          <div class="card" style="text-align:center">
-            <div class="profile-avatar-wrap">
-              <div id="profile-avatar-display"></div>
-              <button class="btn btn-sm btn-outline" id="profile-avatar-upload-btn" style="margin-top:10px">Change Photo</button>
-              <input type="file" id="profile-avatar-file" accept="image/jpeg,image/png,image/webp,image/gif" style="display:none" aria-hidden="true">
+          <div class="profile-layout">
+            <!-- Left: Avatar + Stats -->
+            <div class="card" style="text-align:center">
+              <div class="profile-avatar-wrap">
+                <div id="profile-avatar-display"></div>
+                <button class="btn btn-sm btn-outline" id="profile-avatar-upload-btn" style="margin-top:10px">Change
+                  Photo</button>
+                <input type="file" id="profile-avatar-file" accept="image/jpeg,image/png,image/webp,image/gif"
+                  style="display:none" aria-hidden="true">
+              </div>
+              <div id="profile-email"
+                style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px;margin-top:8px"></div>
+              <div class="profile-stats">
+                <div class="profile-stat">
+                  <div class="profile-stat-value" id="profile-stat-transactions">0</div>
+                  <div class="profile-stat-label">Transactions</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="profile-stat-value" id="profile-stat-plans">0</div>
+                  <div class="profile-stat-label">Plans</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="profile-stat-value" id="profile-stat-goals">0</div>
+                  <div class="profile-stat-label">Goals</div>
+                </div>
+              </div>
             </div>
-            <div id="profile-email" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:4px;margin-top:8px"></div>
-            <div class="profile-stats">
-              <div class="profile-stat">
-                <div class="profile-stat-value" id="profile-stat-transactions">0</div>
-                <div class="profile-stat-label">Transactions</div>
+
+            <!-- Right: Edit Form -->
+            <div>
+              <div class="card" style="margin-bottom:16px">
+                <div class="card-title">Edit Profile</div>
+                <div class="form-group">
+                  <label class="label" style="justify-content:space-between">
+                    Username
+                    <span style="font-size:0.7rem;color:var(--text-dim);font-weight:400;text-transform:none">3–30 chars
+                      · lowercase · no spaces</span>
+                  </label>
+                  <input type="text" class="input" id="profile-username-input" placeholder="your-username"
+                    maxlength="30" autocapitalize="off" autocorrect="off" spellcheck="false">
+                </div>
+                <div class="form-group">
+                  <label class="label" style="justify-content:space-between">
+                    Display Name
+                    <span style="font-size:0.7rem;color:var(--text-dim);font-weight:400;text-transform:none">Capitals
+                      &amp; spaces OK · max 50</span>
+                  </label>
+                  <input type="text" class="input" id="profile-nickname-input" placeholder="e.g. Alex Johnson"
+                    maxlength="50">
+                </div>
+                <div class="form-group">
+                  <label class="label">Bio (optional)</label>
+                  <textarea class="input" id="profile-bio-input" placeholder="A short bio…" rows="3"
+                    style="resize:vertical"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
               </div>
-              <div class="profile-stat">
-                <div class="profile-stat-value" id="profile-stat-plans">0</div>
-                <div class="profile-stat-label">Plans</div>
-              </div>
-              <div class="profile-stat">
-                <div class="profile-stat-value" id="profile-stat-goals">0</div>
-                <div class="profile-stat-label">Goals</div>
+
+              <div class="danger-zone">
+                <h3>⚠️ Danger Zone</h3>
+                <p>Sign out of your account on this device.</p>
+                <button class="btn btn-danger" id="signout-btn-profile"
+                  onclick="UI.confirm('Sign out of MrWiseMax?', () => Auth.signOut(), false)">Sign Out</button>
               </div>
             </div>
           </div>
 
-          <!-- Right: Edit Form -->
-          <div>
-            <div class="card" style="margin-bottom:16px">
-              <div class="card-title">Edit Profile</div>
-              <div class="form-group">
-                <label class="label" style="justify-content:space-between">
-                  Username
-                  <span style="font-size:0.7rem;color:var(--text-dim);font-weight:400;text-transform:none">3–30 chars · lowercase · no spaces</span>
-                </label>
-                <input type="text" class="input" id="profile-username-input" placeholder="your-username" maxlength="30" autocapitalize="off" autocorrect="off" spellcheck="false">
-              </div>
-              <div class="form-group">
-                <label class="label" style="justify-content:space-between">
-                  Display Name
-                  <span style="font-size:0.7rem;color:var(--text-dim);font-weight:400;text-transform:none">Capitals &amp; spaces OK · max 50</span>
-                </label>
-                <input type="text" class="input" id="profile-nickname-input" placeholder="e.g. Alex Johnson" maxlength="50">
-              </div>
-              <div class="form-group">
-                <label class="label">Bio (optional)</label>
-                <textarea class="input" id="profile-bio-input" placeholder="A short bio…" rows="3" style="resize:vertical"></textarea>
-              </div>
-              <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
-            </div>
-
-            <div class="danger-zone">
-              <h3>⚠️ Danger Zone</h3>
-              <p>Sign out of your account on this device.</p>
-              <button class="btn btn-danger" id="signout-btn-profile" onclick="UI.confirm('Sign out of MrWiseMax?', () => Auth.signOut(), false)">Sign Out</button>
-            </div>
+          <!-- Saved Blueprints embedded in Profile -->
+          <div class="card" style="margin-top:20px">
+            <div class="card-title" style="margin-bottom:14px">🔖 Saved Blueprints</div>
+            <div class="blueprint-feed" id="profile-saved-blueprints-grid"></div>
           </div>
-        </div>
 
-        <!-- Saved Blueprints embedded in Profile -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-title" style="margin-bottom:14px">🔖 Saved Blueprints</div>
-          <div class="blueprint-feed" id="profile-saved-blueprints-grid"></div>
-        </div>
+        </section>
 
-      </section>
-
-      <!-- ═══════════════════════════════════════
+        <!-- ═══════════════════════════════════════
            SECTION: MESSAGES
       ═══════════════════════════════════════ -->
-      <section class="dash-section" id="section-messages">
-        <div class="chat-layout">
+        <section class="dash-section" id="section-messages">
+          <div class="chat-layout">
 
-          <!-- Left: Contact List -->
-          <div class="chat-sidebar">
-            <div class="chat-sidebar-header">
-              <h2 class="chat-sidebar-title">Messages</h2>
+            <!-- Left: Contact List -->
+            <div class="chat-sidebar">
+              <div class="chat-sidebar-header">
+                <h2 class="chat-sidebar-title">Messages</h2>
+              </div>
+
+              <!-- Search contacts -->
+              <div class="chat-search-wrap">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="color:var(--text-dim);flex-shrink:0">
+                  <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5" />
+                  <path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                <input type="text" id="chat-search-input" class="chat-search-input" placeholder="Search contacts…"
+                  autocomplete="off">
+              </div>
+
+              <!-- Filter tabs: All / Primary / General -->
+              <div class="chat-filter-tabs">
+                <button class="chat-filter-btn active" data-filter="all" onclick="Chat.setFilter('all')">All</button>
+                <button class="chat-filter-btn" data-filter="primary"
+                  onclick="Chat.setFilter('primary')">Primary</button>
+                <button class="chat-filter-btn" data-filter="general"
+                  onclick="Chat.setFilter('general')">General</button>
+              </div>
+
+              <div class="chat-contact-list" id="chat-contact-list">
+                <div class="loading-state" style="padding:24px">Loading…</div>
+              </div>
             </div>
 
-            <!-- Search contacts -->
-            <div class="chat-search-wrap">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="color:var(--text-dim);flex-shrink:0">
-                <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              <input type="text" id="chat-search-input" class="chat-search-input" placeholder="Search contacts…" autocomplete="off">
+            <!-- Right: Chat Window -->
+            <div class="chat-window" id="chat-window">
+              <div class="chat-placeholder">
+                <div class="chat-placeholder-icon">💬</div>
+                <p>Select a conversation or search for a user in the Community tab to start chatting.</p>
+              </div>
             </div>
 
-            <!-- Filter tabs: All / Primary / General -->
-            <div class="chat-filter-tabs">
-              <button class="chat-filter-btn active" data-filter="all"     onclick="Chat.setFilter('all')">All</button>
-              <button class="chat-filter-btn"         data-filter="primary" onclick="Chat.setFilter('primary')">Primary</button>
-              <button class="chat-filter-btn"         data-filter="general" onclick="Chat.setFilter('general')">General</button>
-            </div>
-
-            <div class="chat-contact-list" id="chat-contact-list">
-              <div class="loading-state" style="padding:24px">Loading…</div>
-            </div>
           </div>
+        </section>
 
-          <!-- Right: Chat Window -->
-          <div class="chat-window" id="chat-window">
-            <div class="chat-placeholder">
-              <div class="chat-placeholder-icon">💬</div>
-              <p>Select a conversation or search for a user in the Community tab to start chatting.</p>
-            </div>
-          </div>
+      </main><!-- /.dash-content -->
+    </div><!-- /.dash-main -->
+  </div><!-- /.dash-layout -->
 
-        </div>
-      </section>
+  <!-- ── Others Popup (sits above mobile nav) ───────────────────── -->
+  <div class="mobile-more-popup" id="mobile-more-popup">
+    <button class="mobile-more-item" onclick="mobileMoreNav('simulate')">
+      <span class="mobile-more-icon">🔮</span>Simulations
+    </button>
+    <button class="mobile-more-item" onclick="mobileMoreNav('compare')">
+      <span class="mobile-more-icon">⚖️</span>Plan Comparison
+    </button>
+    <button class="mobile-more-item" onclick="mobileMoreNav('education')">
+      <span class="mobile-more-icon">🎓</span>Education
+    </button>
+  </div>
 
-    </main><!-- /.dash-content -->
-  </div><!-- /.dash-main -->
-</div><!-- /.dash-layout -->
+  <!-- ── Mobile Bottom Navigation ─────────────────────────────── -->
+  <nav class="mobile-nav">
+    <button class="mobile-nav-item active" data-nav="overview">
+      <span class="mobile-nav-icon">📊</span>Overview
+    </button>
+    <button class="mobile-nav-item" data-nav="vault">
+      <span class="mobile-nav-icon">🏦</span>Vault
+    </button>
+    <button class="mobile-nav-item" data-nav="plans">
+      <span class="mobile-nav-icon">📋</span>Plans
+    </button>
+    <button class="mobile-nav-item" data-nav="community">
+      <span class="mobile-nav-icon">🌐</span>Community
+    </button>
+    <button class="mobile-nav-item" id="mobile-others-btn" onclick="toggleMobileMore(event)">
+      <span class="mobile-nav-icon">
+        <svg width="20" height="15" viewBox="0 0 20 15" fill="currentColor">
+          <rect y="0" width="20" height="2.5" rx="1.25" />
+          <rect y="6.25" width="20" height="2.5" rx="1.25" />
+          <rect y="12.5" width="20" height="2.5" rx="1.25" />
+        </svg>
+      </span>Others
+    </button>
+  </nav>
 
-<!-- ── Others Popup (sits above mobile nav) ───────────────────── -->
-<div class="mobile-more-popup" id="mobile-more-popup">
-  <button class="mobile-more-item" onclick="mobileMoreNav('simulate')">
-    <span class="mobile-more-icon">🔮</span>Simulations
-  </button>
-  <button class="mobile-more-item" onclick="mobileMoreNav('compare')">
-    <span class="mobile-more-icon">⚖️</span>Plan Comparison
-  </button>
-</div>
-
-<!-- ── Mobile Bottom Navigation ─────────────────────────────── -->
-<nav class="mobile-nav">
-  <button class="mobile-nav-item active" data-nav="overview">
-    <span class="mobile-nav-icon">📊</span>Overview
-  </button>
-  <button class="mobile-nav-item" data-nav="vault">
-    <span class="mobile-nav-icon">🏦</span>Vault
-  </button>
-  <button class="mobile-nav-item" data-nav="plans">
-    <span class="mobile-nav-icon">📋</span>Plans
-  </button>
-  <button class="mobile-nav-item" data-nav="community">
-    <span class="mobile-nav-icon">🌐</span>Community
-  </button>
-  <button class="mobile-nav-item" id="mobile-others-btn" onclick="toggleMobileMore(event)">
-    <span class="mobile-nav-icon">
-      <svg width="20" height="15" viewBox="0 0 20 15" fill="currentColor">
-        <rect y="0"    width="20" height="2.5" rx="1.25"/>
-        <rect y="6.25" width="20" height="2.5" rx="1.25"/>
-        <rect y="12.5" width="20" height="2.5" rx="1.25"/>
-      </svg>
-    </span>Others
-  </button>
-</nav>
-
-<!-- ════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════
      MODALS
 ════════════════════════════════════════════ -->
 
-<!-- Crop Avatar Modal -->
-<div class="modal" id="crop-modal">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-header">
-      <h2>Crop Photo</h2>
-      <button class="modal-close" onclick="UI.closeModal('crop-modal')">✕</button>
-    </div>
-    <div class="crop-wrap" id="crop-wrap">
-      <img id="crop-source-img" alt="crop source">
-      <div class="crop-box" id="crop-box">
-        <div class="crop-handle crop-handle-nw" data-dir="nw"></div>
-        <div class="crop-handle crop-handle-ne" data-dir="ne"></div>
-        <div class="crop-handle crop-handle-sw" data-dir="sw"></div>
-        <div class="crop-handle crop-handle-se" data-dir="se"></div>
+  <!-- Crop Avatar Modal -->
+  <div class="modal" id="crop-modal">
+    <div class="modal-box" style="max-width:480px">
+      <div class="modal-header">
+        <h2>Crop Photo</h2>
+        <button class="modal-close" onclick="UI.closeModal('crop-modal')">✕</button>
       </div>
-    </div>
-    <div class="crop-preview-row">
-      <span class="crop-preview-label">Preview</span>
-      <canvas id="crop-preview-canvas" width="56" height="56"></canvas>
-    </div>
-    <canvas id="crop-canvas" style="display:none"></canvas>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('crop-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmCrop()">Apply &amp; Upload</button>
+      <div class="crop-wrap" id="crop-wrap">
+        <img id="crop-source-img" alt="crop source">
+        <div class="crop-box" id="crop-box">
+          <div class="crop-handle crop-handle-nw" data-dir="nw"></div>
+          <div class="crop-handle crop-handle-ne" data-dir="ne"></div>
+          <div class="crop-handle crop-handle-sw" data-dir="sw"></div>
+          <div class="crop-handle crop-handle-se" data-dir="se"></div>
+        </div>
+      </div>
+      <div class="crop-preview-row">
+        <span class="crop-preview-label">Preview</span>
+        <canvas id="crop-preview-canvas" width="56" height="56"></canvas>
+      </div>
+      <canvas id="crop-canvas" style="display:none"></canvas>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('crop-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmCrop()">Apply &amp; Upload</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Confirm Dialog -->
-<div class="modal" id="confirm-modal">
-  <div class="modal-box" style="max-width:400px">
-    <div class="modal-header">
-      <h2>Confirm</h2>
-      <button class="modal-close" onclick="UI.closeModal('confirm-modal')">✕</button>
-    </div>
-    <p id="confirm-message" style="color:var(--text-muted);font-size:0.9rem;margin-bottom:4px"></p>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('confirm-modal')">Cancel</button>
-      <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+  <!-- Confirm Dialog -->
+  <div class="modal" id="confirm-modal">
+    <div class="modal-box" style="max-width:400px">
+      <div class="modal-header">
+        <h2>Confirm</h2>
+        <button class="modal-close" onclick="UI.closeModal('confirm-modal')">✕</button>
+      </div>
+      <p id="confirm-message" style="color:var(--text-muted);font-size:0.9rem;margin-bottom:4px"></p>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('confirm-modal')">Cancel</button>
+        <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Add / Edit Transaction -->
-<div class="modal" id="transaction-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="tx-modal-title">Add Transaction</h2>
-      <button class="modal-close" onclick="UI.closeModal('transaction-modal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label class="label">Type *</label>
-      <select class="input" id="tx-type">
-        <option value="expense">Expense</option>
-        <option value="income">Income</option>
-      </select>
-    </div>
-    <div class="input-row">
-      <div class="form-group">
-        <label class="label">Amount ($) *</label>
-        <input type="number" class="input" id="tx-amount" placeholder="0.00" min="0" step="0.01">
+  <!-- Add / Edit Transaction -->
+  <div class="modal" id="transaction-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="tx-modal-title">Add Transaction</h2>
+        <button class="modal-close" onclick="UI.closeModal('transaction-modal')">✕</button>
       </div>
       <div class="form-group">
-        <label class="label">Date *</label>
-        <input type="date" class="input" id="tx-date">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="label">Category *</label>
-      <select class="input" id="tx-category"></select>
-    </div>
-    <div class="form-group">
-      <label class="label">Description (optional)</label>
-      <input type="text" class="input" id="tx-description" placeholder="e.g. Grocery run">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('transaction-modal')">Cancel</button>
-      <button class="btn btn-primary" id="tx-save-btn" onclick="saveTransaction()">Save Transaction</button>
-    </div>
-  </div>
-</div>
-
-<!-- Add / Edit Goal -->
-<div class="modal" id="goal-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2 id="goal-modal-title">Create Savings Goal</h2>
-      <button class="modal-close" onclick="UI.closeModal('goal-modal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label class="label">Goal Name *</label>
-      <input type="text" class="input" id="goal-name" placeholder="e.g. Emergency Fund">
-    </div>
-    <div class="input-row">
-      <div class="form-group">
-        <label class="label">Target Amount ($) *</label>
-        <input type="number" class="input" id="goal-target" placeholder="5000" min="1" step="0.01">
-      </div>
-      <div class="form-group">
-        <label class="label">Current Saved ($)</label>
-        <input type="number" class="input" id="goal-current" placeholder="0" min="0" step="0.01">
-      </div>
-    </div>
-    <div class="input-row">
-      <div class="form-group">
-        <label class="label">Target Date (optional)</label>
-        <input type="date" class="input" id="goal-deadline">
-      </div>
-      <div class="form-group">
-        <label class="label">Color</label>
-        <input type="color" class="color-input" id="goal-color" value="#BB885F" style="width:100%;height:42px">
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('goal-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveGoal()">Save Goal</button>
-    </div>
-  </div>
-</div>
-
-<!-- Contribute to Goal -->
-<div class="modal" id="contribute-modal">
-  <div class="modal-box" style="max-width:380px">
-    <div class="modal-header">
-      <h2>Add Contribution</h2>
-      <button class="modal-close" onclick="UI.closeModal('contribute-modal')">✕</button>
-    </div>
-    <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:16px">
-      Adding to: <strong id="contribute-goal-name"></strong>
-    </p>
-    <div class="form-group">
-      <label class="label">Amount ($)</label>
-      <input type="number" class="input" id="contribute-amount" placeholder="e.g. 100" min="0.01" step="0.01">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('contribute-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="contributeToGoal()">Add Contribution</button>
-    </div>
-  </div>
-</div>
-
-<!-- Create / Edit Budget Plan -->
-<div class="modal" id="plan-modal">
-  <div class="modal-box modal-lg">
-    <div class="modal-header">
-      <h2 id="plan-modal-title">Create Budget Plan</h2>
-      <button class="modal-close" onclick="UI.closeModal('plan-modal')">✕</button>
-    </div>
-    <div class="form-group">
-      <label class="label">Plan Name *</label>
-      <input type="text" class="input" id="plan-name" placeholder="e.g. Conservative Growth Plan">
-    </div>
-    <div class="input-row">
-      <div class="form-group">
-        <label class="label">Description (optional)</label>
-        <input type="text" class="input" id="plan-description" placeholder="Brief description…">
-      </div>
-      <div class="form-group">
-        <label class="label">Monthly Income ($)</label>
-        <input type="number" class="input" id="plan-income" placeholder="e.g. 4000" min="0">
-      </div>
-    </div>
-
-    <div style="margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <label class="label" style="margin:0">Budget Allocations</label>
-        <button type="button" class="btn btn-sm btn-outline" onclick="addAllocRow()">+ Add Row</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 80px 40px 28px;gap:6px;margin-bottom:6px;padding:0 2px">
-        <span style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase">Category</span>
-        <span style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase">%</span>
-        <span style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase">Color</span>
-        <span></span>
-      </div>
-      <div id="allocation-rows"></div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('plan-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="savePlan()">Save Plan</button>
-    </div>
-  </div>
-</div>
-
-<!-- Share Blueprint -->
-<div class="modal" id="share-blueprint-modal">
-  <div class="modal-box modal-lg">
-    <div class="modal-header">
-      <h2>Share a Budget Blueprint</h2>
-      <button class="modal-close" onclick="UI.closeModal('share-blueprint-modal')">✕</button>
-    </div>
-    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:18px">
-      Share your budgeting strategy anonymously. <strong>Do not include real dollar amounts</strong> — percentages only.
-    </p>
-    <form id="share-blueprint-form" onsubmit="return false">
-      <div class="form-group">
-        <label class="label">Blueprint Title *</label>
-        <input type="text" class="input" id="share-title" placeholder="e.g. My FIRE Strategy">
+        <label class="label">Type *</label>
+        <select class="input" id="tx-type">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
       </div>
       <div class="input-row">
         <div class="form-group">
-          <label class="label">Strategy Type</label>
-          <input type="text" class="input" id="share-strategy" placeholder="e.g. FIRE, Debt Snowball…">
+          <label class="label">Amount ($) *</label>
+          <input type="number" class="input" id="tx-amount" placeholder="0.00" min="0" step="0.01">
         </div>
         <div class="form-group">
-          <label class="label">Tags (comma-separated)</label>
-          <input type="text" class="input" id="share-tags" placeholder="investing, savings, debt-free">
+          <label class="label">Date *</label>
+          <input type="date" class="input" id="tx-date">
         </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Category *</label>
+        <select class="input" id="tx-category"></select>
       </div>
       <div class="form-group">
         <label class="label">Description (optional)</label>
-        <textarea class="input" id="share-desc" rows="2" placeholder="What makes this strategy work for you?"></textarea>
+        <input type="text" class="input" id="tx-description" placeholder="e.g. Grocery run">
       </div>
-
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <label class="label" style="margin:0">Budget Ratios (% only — no real numbers)</label>
-        <button type="button" class="btn btn-sm btn-outline" onclick="addShareRow()">+ Add Row</button>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('transaction-modal')">Cancel</button>
+        <button class="btn btn-primary" id="tx-save-btn" onclick="saveTransaction()">Save Transaction</button>
       </div>
-      <div id="share-allocation-rows"></div>
-    </form>
-
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('share-blueprint-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="shareBlueprint()">Share with Community</button>
     </div>
   </div>
-</div>
 
-<!-- Blueprint Detail + Comments -->
-<div class="modal" id="blueprint-detail-modal">
-  <div class="modal-box modal-lg">
-    <div class="modal-header">
-      <h2 id="detail-title"></h2>
-      <button class="modal-close" onclick="UI.closeModal('blueprint-detail-modal')">✕</button>
-    </div>
-    <p id="detail-description" style="font-size:0.875rem;color:var(--text-muted);margin-bottom:18px"></p>
-
-    <div class="card-title">Budget Ratios</div>
-    <div id="detail-ratios" class="detail-ratios"></div>
-
-    <div class="card-title" style="margin-top:20px">Community Discussion</div>
-    <div class="comments-list" id="detail-comments"></div>
-
-    <div class="comment-input-row">
-      <input type="text" class="input" id="comment-input" placeholder="Share your thoughts or advice…"
-             onkeydown="if(event.key==='Enter')submitComment()">
-      <button class="btn btn-primary btn-sm" onclick="submitComment()">Post</button>
-    </div>
-
-    <input type="hidden" id="detail-blueprint-id">
-  </div>
-</div>
-
-<!-- Recurring Transaction Modal -->
-<div class="modal" id="recurring-modal">
-  <div class="modal-box" style="max-width:460px">
-    <div class="modal-header">
-      <h2 id="rec-modal-title">Add Recurring Entry</h2>
-      <button class="modal-close" onclick="UI.closeModal('recurring-modal')">✕</button>
-    </div>
-    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:18px">
-      This will automatically post a transaction on the selected day every month (e.g. salary on the 1st, rent on the 5th).
-    </p>
-    <div class="form-group">
-      <label class="label">Type *</label>
-      <select class="input" id="rec-type">
-        <option value="income">Income (salary, rent received, etc.)</option>
-        <option value="expense">Expense (rent, subscriptions, etc.)</option>
-      </select>
-    </div>
-    <div class="input-row">
-      <div class="form-group">
-        <label class="label">Amount ($) *</label>
-        <input type="number" class="input" id="rec-amount" placeholder="0.00" min="0.01" step="0.01">
+  <!-- Add / Edit Goal -->
+  <div class="modal" id="goal-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="goal-modal-title">Create Savings Goal</h2>
+        <button class="modal-close" onclick="UI.closeModal('goal-modal')">✕</button>
       </div>
       <div class="form-group">
-        <label class="label">Day of Month *</label>
-        <select class="input" id="rec-day">
-          <!-- 1–28 populated below -->
+        <label class="label">Goal Name *</label>
+        <input type="text" class="input" id="goal-name" placeholder="e.g. Emergency Fund">
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label class="label">Target Amount ($) *</label>
+          <input type="number" class="input" id="goal-target" placeholder="5000" min="1" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="label">Current Saved ($)</label>
+          <input type="number" class="input" id="goal-current" placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label class="label">Target Date (optional)</label>
+          <input type="date" class="input" id="goal-deadline">
+        </div>
+        <div class="form-group">
+          <label class="label">Color</label>
+          <input type="color" class="color-input" id="goal-color" value="#BB885F" style="width:100%;height:42px">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('goal-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveGoal()">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contribute to Goal -->
+  <div class="modal" id="contribute-modal">
+    <div class="modal-box" style="max-width:380px">
+      <div class="modal-header">
+        <h2>Add Contribution</h2>
+        <button class="modal-close" onclick="UI.closeModal('contribute-modal')">✕</button>
+      </div>
+      <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:16px">
+        Adding to: <strong id="contribute-goal-name"></strong>
+      </p>
+      <div class="form-group">
+        <label class="label">Amount ($)</label>
+        <input type="number" class="input" id="contribute-amount" placeholder="e.g. 100" min="0.01" step="0.01">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('contribute-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="contributeToGoal()">Add Contribution</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create / Edit Budget Plan -->
+  <div class="modal" id="plan-modal">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h2 id="plan-modal-title">Create Budget Plan</h2>
+        <button class="modal-close" onclick="UI.closeModal('plan-modal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="label">Plan Name *</label>
+        <input type="text" class="input" id="plan-name" placeholder="e.g. Conservative Growth Plan">
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label class="label">Description (optional)</label>
+          <input type="text" class="input" id="plan-description" placeholder="Brief description…">
+        </div>
+        <div class="form-group">
+          <label class="label">Monthly Income ($)</label>
+          <input type="number" class="input" id="plan-income" placeholder="e.g. 4000" min="0">
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label class="label" style="margin:0">Budget Allocations</label>
+          <button type="button" class="btn btn-sm btn-outline" onclick="addAllocRow()">+ Add Row</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 80px 40px 28px;gap:6px;margin-bottom:6px;padding:0 2px">
+          <span style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase">Category</span>
+          <span style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase">%</span>
+          <span style="font-size:0.72rem;color:var(--text-dim);text-transform:uppercase">Color</span>
+          <span></span>
+        </div>
+        <div id="allocation-rows"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('plan-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="savePlan()">Save Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Blueprint -->
+  <div class="modal" id="share-blueprint-modal">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h2>Share a Budget Blueprint</h2>
+        <button class="modal-close" onclick="UI.closeModal('share-blueprint-modal')">✕</button>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:18px">
+        Share your budgeting strategy anonymously. <strong>Do not include real dollar amounts</strong> — percentages
+        only.
+      </p>
+      <form id="share-blueprint-form" onsubmit="return false">
+        <div class="form-group">
+          <label class="label">Blueprint Title *</label>
+          <input type="text" class="input" id="share-title" placeholder="e.g. My FIRE Strategy">
+        </div>
+        <div class="input-row">
+          <div class="form-group">
+            <label class="label">Strategy Type</label>
+            <input type="text" class="input" id="share-strategy" placeholder="e.g. FIRE, Debt Snowball…">
+          </div>
+          <div class="form-group">
+            <label class="label">Tags (comma-separated)</label>
+            <input type="text" class="input" id="share-tags" placeholder="investing, savings, debt-free">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="label">Description (optional)</label>
+          <textarea class="input" id="share-desc" rows="2"
+            placeholder="What makes this strategy work for you?"></textarea>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <label class="label" style="margin:0">Budget Ratios (% only — no real numbers)</label>
+          <button type="button" class="btn btn-sm btn-outline" onclick="addShareRow()">+ Add Row</button>
+        </div>
+        <div id="share-allocation-rows"></div>
+      </form>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('share-blueprint-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="shareBlueprint()">Share with Community</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blueprint Detail + Comments -->
+  <div class="modal" id="blueprint-detail-modal">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <h2 id="detail-title"></h2>
+        <button class="modal-close" onclick="UI.closeModal('blueprint-detail-modal')">✕</button>
+      </div>
+      <p id="detail-description" style="font-size:0.875rem;color:var(--text-muted);margin-bottom:18px"></p>
+
+      <div class="card-title">Budget Ratios</div>
+      <div id="detail-ratios" class="detail-ratios"></div>
+
+      <div class="card-title" style="margin-top:20px">Community Discussion</div>
+      <div class="comments-list" id="detail-comments"></div>
+
+      <div class="comment-input-row">
+        <input type="text" class="input" id="comment-input" placeholder="Share your thoughts or advice…"
+          onkeydown="if(event.key==='Enter')submitComment()">
+        <button class="btn btn-primary btn-sm" onclick="submitComment()">Post</button>
+      </div>
+
+      <input type="hidden" id="detail-blueprint-id">
+    </div>
+  </div>
+
+  <!-- Recurring Transaction Modal -->
+  <div class="modal" id="recurring-modal">
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-header">
+        <h2 id="rec-modal-title">Add Recurring Entry</h2>
+        <button class="modal-close" onclick="UI.closeModal('recurring-modal')">✕</button>
+      </div>
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:18px">
+        This will automatically post a transaction on the selected day every month (e.g. salary on the 1st, rent on the
+        5th).
+      </p>
+      <div class="form-group">
+        <label class="label">Type *</label>
+        <select class="input" id="rec-type">
+          <option value="income">Income (salary, rent received, etc.)</option>
+          <option value="expense">Expense (rent, subscriptions, etc.)</option>
         </select>
       </div>
-    </div>
-    <div class="form-group">
-      <label class="label">Category *</label>
-      <select class="input" id="rec-category"></select>
-    </div>
-    <div class="form-group">
-      <label class="label">Description (optional)</label>
-      <input type="text" class="input" id="rec-description" placeholder="e.g. Monthly Salary, Netflix, House Rent…">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="UI.closeModal('recurring-modal')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveRecurring()">Save</button>
+      <div class="input-row">
+        <div class="form-group">
+          <label class="label">Amount ($) *</label>
+          <input type="number" class="input" id="rec-amount" placeholder="0.00" min="0.01" step="0.01">
+        </div>
+        <div class="form-group">
+          <label class="label">Day of Month *</label>
+          <select class="input" id="rec-day">
+            <!-- 1–28 populated below -->
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="label">Category *</label>
+        <select class="input" id="rec-category"></select>
+      </div>
+      <div class="form-group">
+        <label class="label">Description (optional)</label>
+        <input type="text" class="input" id="rec-description" placeholder="e.g. Monthly Salary, Netflix, House Rent…">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="UI.closeModal('recurring-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveRecurring()">Save</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Toast Container -->
-<div id="toast-container"></div>
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
 
-<!-- ── Scripts ───────────────────────────────────────────────── -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="assets/js/supabase.js"></script>
-<script src="assets/js/ui.js"></script>
-<script src="assets/js/auth.js"></script>
-<script src="assets/js/chat.js"></script>
-<script src="assets/js/dashboard.js"></script>
-<script>
-  // Populate day-of-month select (1–28 — safe for all months)
-  (function() {
-    const el = document.getElementById('rec-day');
-    if (!el) return;
-    for (let d = 1; d <= 28; d++) {
-      const opt = document.createElement('option');
-      opt.value = d;
-      opt.textContent = d === 1 ? '1st' : d === 2 ? '2nd' : d === 3 ? '3rd' : `${d}th`;
-      el.appendChild(opt);
-    }
-  })();
-</script>
+  <!-- ── Scripts ───────────────────────────────────────────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="assets/js/supabase.js"></script>
+  <script src="assets/js/ui.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/chat.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+  <script>
+    // Populate day-of-month select (1–28 — safe for all months)
+    (function () {
+      const el = document.getElementById('rec-day');
+      if (!el) return;
+      for (let d = 1; d <= 28; d++) {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d === 1 ? '1st' : d === 2 ? '2nd' : d === 3 ? '3rd' : `${d}th`;
+        el.appendChild(opt);
+      }
+    })();
+  </script>
 
 </body>
+
 </html>
