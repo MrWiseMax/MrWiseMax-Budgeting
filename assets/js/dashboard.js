@@ -86,10 +86,11 @@ function navigateTo(section) {
   // Close Others popup whenever we navigate
   document.getElementById('mobile-more-popup')?.classList.remove('open');
 
-  // Manage chat updaters — stop both when leaving messages section
+  // Manage chat updaters — stop all when leaving messages section
   if (section !== 'messages') {
     Chat.stopTimeUpdater();
     Chat.stopMessagePoll();
+    Chat.stopRecording?.();
   }
 
   const loaders = { overview: renderOverview, vault: renderVault, plans: renderPlans,
