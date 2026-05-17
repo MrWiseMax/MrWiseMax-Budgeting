@@ -28,12 +28,8 @@
 
     <!-- Sidebar (desktop) -->
     <aside class="sidebar">
-      <div class="sidebar-logo">
-        <img src="mrwisemax-logo.webp" class="logo-img" alt="MrWiseMax">
-        <span class="logo-text">MrWiseMax</span>
-      </div>
 
-      <div class="sidebar-user">
+      <div class="sidebar-user" onclick="navigateTo('profile')">
         <div class="user-avatar"></div>
         <div class="user-info">
           <span class="user-name-display">Loading…</span>
@@ -68,7 +64,7 @@
     <div class="dash-main">
       <!-- Topbar -->
       <header class="topbar">
-        <div class="user-avatar" style="cursor:pointer" data-nav="profile" onclick="navigateTo('profile')"
+        <div id="user-avatar-mobile-view" class="user-avatar" style="cursor:pointer" data-nav="profile" onclick="navigateTo('profile')"
           title="Profile"></div>
         <div class="topbar-actions">
           <button class="topbar-messages-btn" data-nav="messages" onclick="navigateTo('messages')" title="Messages">
@@ -976,7 +972,12 @@
       <span>Add to home screen for best experience</span>
     </div>
     <button class="pwa-banner-install" id="pwa-install-btn">Install</button>
-    <button class="pwa-banner-close" id="pwa-dismiss-btn" title="Dismiss"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    <button class="pwa-banner-close" id="pwa-dismiss-btn" title="Dismiss"><svg xmlns="http://www.w3.org/2000/svg"
+        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg></button>
   </div>
 
   <!-- ── Scripts ───────────────────────────────────────────────── -->

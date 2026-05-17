@@ -62,7 +62,7 @@ img {
   gap: 8px;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: #fff;
-  padding: 12px 24px;
+  padding: 8px 15px !important;
   border-radius: var(--radius);
   font-weight: 600;
   font-size: 0.95rem;
@@ -148,13 +148,15 @@ img {
   align-items: center;
   font-size: 1.3rem;
   font-weight: 800;
+  gap: 8px;
 }
 
 .logo-icon {
   font-size: 1.4rem;
+  border-radius: 50%;
 }
 .logo-img {
-  height: 1.6rem;
+  height: 2.2rem;
   width: auto;
   object-fit: contain;
   display: block;
