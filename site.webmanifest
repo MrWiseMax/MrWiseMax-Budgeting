@@ -1,21 +1,15 @@
 {
-  "name": "Mr Wise Max",
-  "short_name": "WiseMax",
+  "name": "MrWiseMax — Budgeting",
+  "short_name": "MrWiseMax",
+  "description": "Your personal financial lab — budget, simulate, and grow.",
+  "start_url": "/budgeting-dashboard.html",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#BB885F",
+  "orientation": "portrait-primary",
   "icons": [
-    {
-      "src": "/web-app-manifest-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/web-app-manifest-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+    { "src": "/favicon-96x96.png",            "sizes": "96x96",   "type": "image/png" },
+    { "src": "/web-app-manifest-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/web-app-manifest-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
