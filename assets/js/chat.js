@@ -1168,15 +1168,36 @@ const Chat = (() => {
     if (!activeConvId) return;
     let stream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: { ideal: 48000 },
+          channelCount: { ideal: 1 },       // mono is fine for voice; saves size
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
     } catch {
       UI.toast('Microphone access denied.', 'error'); return;
     }
 
     audioChunks = [];
     recordingSeconds = 0;
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
-    mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+    // Pick the best available codec in quality order
+    const PREFERRED = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/ogg',
+      'audio/mp4',
+    ];
+    const mimeType = PREFERRED.find(t => MediaRecorder.isTypeSupported(t)) || 'audio/webm';
+
+    mediaRecorder = new MediaRecorder(stream, {
+      mimeType,
+      audioBitsPerSecond: 64_000,   // 64 kbps — clear voice, reasonable file size
+    });
 
     mediaRecorder.ondataavailable = e => { if (e.data.size) audioChunks.push(e.data); };
     mediaRecorder.onstop = async () => {
@@ -1188,7 +1209,7 @@ const Chat = (() => {
       await _uploadAudio(blob, mimeType);
     };
 
-    mediaRecorder.start(200);
+    mediaRecorder.start(100);   // 100 ms chunks — finer granularity, smoother upload
     _updateMicBtn(true);
 
     recordingTimer = setInterval(() => {
@@ -1241,7 +1262,7 @@ const Chat = (() => {
     }
 
     // ── Step 1: Storage upload ──────────────────────────────
-    const ext = mimeType.includes('webm') ? 'webm' : 'ogg';
+    const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'mp4' : 'ogg';
     const path = `audio/${activeConvId}/${Date.now()}.${ext}`;
     console.log('[Chat:Audio] Step 1 — uploading to storage path:', path);
 
